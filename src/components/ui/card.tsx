@@ -14,7 +14,7 @@ function Card({ className, children, ...props }: React.ComponentProps<"div">) {
       {...props}
     >
       <UcabBar />
-      <div className="pb-6 pt-5 flex flex-col gap-6">{children}</div>
+      <div className="py-6 flex flex-col gap-6">{children}</div>
     </div>
   );
 }

@@ -47,6 +47,8 @@
   --color-gema-yellow: #fbc22f;
   --color-gema-blue: #36b3e1;
   --color-gema-green: #0ead69;
+
+  --font-sans: 'Poppins', 'Inter', sans-serif;
 }
 
 :root {

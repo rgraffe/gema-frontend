@@ -75,7 +75,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full bg-gema-green hover:bg-green-600 text-black font-semibold"
+                className="w-full bg-gema-green hover:bg-green-600 text-black font-semibold mt-2"
               >
                 Ingresar
               </Button>
