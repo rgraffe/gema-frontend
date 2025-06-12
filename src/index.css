@@ -41,6 +41,16 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Tema customizado de GEMA */
+@theme {
+  --color-background: oklch(96.8% 0.007 247.896);
+  --color-gema-yellow: #fbc22f;
+  --color-gema-blue: #36b3e1;
+  --color-gema-green: #0ead69;
+
+  --font-sans: 'Poppins', 'Inter', sans-serif;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
