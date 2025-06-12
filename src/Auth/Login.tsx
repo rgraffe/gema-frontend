@@ -28,7 +28,7 @@ export default function Login() {
   });
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gradient-to-r from-[#4ade80] via-[#14b8a6] to-[#0891b2]">
+    <div className="flex items-center justify-center h-screen">
       <Card className="w-1/4">
         <CardHeader>
           <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
@@ -75,7 +75,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full bg-[#2dd4bf] hover:bg-teal-500 text-black font-semibold"
+                className="w-full bg-gema-green hover:bg-green-600 text-black font-semibold"
               >
                 Ingresar
               </Button>
