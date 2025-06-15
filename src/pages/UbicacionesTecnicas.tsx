@@ -1,5 +1,7 @@
-import React from 'react';
-import { Eye, CirclePlus, Building } from 'lucide-react';
+import React, { useState } from "react";
+import { Eye, CirclePlus, Building } from "lucide-react";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import FormNuevaUbicacion from "@/components/FormNuevaUbicacion.tsx";
 
 interface DetalleUbicacion {
   codigo: string;
@@ -13,6 +15,8 @@ interface Modulo {
 }
 
 const UbicacionesTecnicas: React.FC = () => {
+  const [open, setOpen] = useState(false);
+
   const ubicaciones: Modulo[] = [
     {
       modulo: "MO1",
@@ -61,13 +65,20 @@ const UbicacionesTecnicas: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Ubicaciones Técnicas</h1>
 
-      <button className="flex items-center justify-center gap-2 bg-gray-300 hover:bg-gray-400 transition-colors rounded-lg p-4 mb-5 cursor-pointer">
-        <CirclePlus />
-        <h2 className="text-xl font-semibold">Crear nueva</h2>
-      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <button className="flex items-center justify-center gap-2 bg-gray-300 hover:bg-gray-400 transition-colors rounded-lg p-4 mb-5 cursor-pointer">
+            <CirclePlus />
+            <h2 className="text-xl font-semibold">Crear nueva</h2>
+          </button>
+        </DialogTrigger>
+
+        {/* Formulario modal reutilizable */}
+        <FormNuevaUbicacion open={open} onClose={() => setOpen(false)} />
+      </Dialog>
 
       <div className="space-y-4">
         {ubicaciones.map((modulo, index) => (
