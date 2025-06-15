@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import React from "react";
 
 type LoginParams = {
   email: string;
@@ -41,11 +40,14 @@ function useLoginRequest(options?: {
 }) {
   return useMutation<LoginResponse, unknown, LoginParams>({
     mutationFn: async ({ email, password }) => {
-      const resp = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ Correo: email, Contraseña: password }),
-      });
+      const resp = await fetch(
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ Correo: email, Contraseña: password }),
+        }
+      );
       if (!resp.ok) {
         // Aquí podrías leer resp.status (por ejemplo, 500) y/o resp.text() para tener más detalle.
         throw new Error("Error al iniciar sesión");
@@ -85,7 +87,7 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center h-screen">
-      <Card className="w-1/4">
+      <Card className="md:w-96 w-2/3">
         <CardHeader>
           <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
         </CardHeader>
@@ -129,7 +131,9 @@ export default function Login() {
 
               {isError && (
                 <p className="text-red-600 text-sm mt-2">
-                  {error instanceof Error ? error.message : "Error desconocido"}
+                  {error instanceof Error
+                    ? error.message
+                    : "Ocurrió un error, por favor intente de nuevo."}
                 </p>
               )}
 
