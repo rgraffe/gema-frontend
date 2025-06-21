@@ -25,7 +25,7 @@ export async function getGruposDeTrabajo() {
 
 /**
  * Servicio para crear un nuevo grupo de trabajo.
- * @param params
+ * @author AndresChacon00
  * @param params.codigo - El código del nuevo grupo.
  * @param params.nombre - El nombre del nuevo grupo.
  * @param params.supervisorId - El ID del supervisor asignado.
