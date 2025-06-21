@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Login from "./Auth/Login";
 import App from "./App";
 import ProtectedRoute from "./components/ui/protected-route";
@@ -10,6 +11,8 @@ import Canva from "./pages/Canva";
 import VistaGeneral from "./pages/VistaGeneral";
 import UbicacionesTecnicas from "./pages/UbicacionesTecnicas";
 import GruposTrabajo from "./components/GruposTrabajo";
+
+const queryClient = new QueryClient();
 
 // Inicializar router de la aplicación
 const router = createBrowserRouter([
@@ -47,6 +50,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   </StrictMode>
 );
