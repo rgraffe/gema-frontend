@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { login } from "@/services/auth";
 
 type LoginParams = {
   email: string;
@@ -39,21 +40,7 @@ function useLoginRequest(options?: {
   onError?: (error: unknown) => void;
 }) {
   return useMutation<LoginResponse, unknown, LoginParams>({
-    mutationFn: async ({ email, password }) => {
-      const resp = await fetch(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ Correo: email, Contraseña: password }),
-        }
-      );
-      if (!resp.ok) {
-        // Aquí podrías leer resp.status (por ejemplo, 500) y/o resp.text() para tener más detalle.
-        throw new Error("Error al iniciar sesión");
-      }
-      return resp.json();
-    },
+    mutationFn: login,
     ...options,
   });
 }
@@ -77,7 +64,6 @@ export default function Login() {
     },
     onError: (err) => {
       console.error("Error en Login:", err);
-      // Aquí podrías actualizar un estado local para mostrar un mensaje en la UI
     },
   });
 
