@@ -1,5 +1,6 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { UserCheck, ClipboardPen, Trash2, CirclePlus, X  } from "lucide-react"
+import { getGruposDeTrabajo } from "@/services/gruposDeTrabajo"
 
 interface GrupoTrabajo {
   codigo: string
@@ -9,13 +10,30 @@ interface GrupoTrabajo {
 }
 
 const GruposTrabajo: React.FC = () => {
-
+  const [grupos, setGrupos] = useState<GrupoTrabajo[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [nuevoGrupo, setNuevoGrupo] = useState({
     codigo: '',
     nombre: '',
     supervisor: ''
   })
+
+  useEffect(() => {
+    const fetchGrupos = async () => {
+      try {
+        const response = await getGruposDeTrabajo();
+        setGrupos(response.data);
+        console.log("gurpos",response.data);
+      } catch (error:any) {
+        setError(error.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchGrupos()
+  }, [])
 
   const supervisores = [
     "Carlos Rodríguez",
@@ -24,7 +42,7 @@ const GruposTrabajo: React.FC = () => {
     "Laura Mendoza",
     "Sebastián Gomes"
   ]
-
+  /*
   const grupos: GrupoTrabajo[] = [
     {
       codigo: "SGMREF",
@@ -56,7 +74,7 @@ const GruposTrabajo: React.FC = () => {
       supervisor: "Sebastián Gomes",
       miembros: "5 Técnicos",
     },
-  ]
+  ]*/
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -71,6 +89,14 @@ const GruposTrabajo: React.FC = () => {
     console.log('Nuevo grupo:', nuevoGrupo)
     setIsModalOpen(false)
     setNuevoGrupo({ codigo: '', nombre: '', supervisor: '' })
+  }
+
+  if (isLoading) {
+    return <div className="p-6 text-center">Cargando grupos de trabajo...</div>
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-red-500">Error: {error}</div>
   }
 
   return (
