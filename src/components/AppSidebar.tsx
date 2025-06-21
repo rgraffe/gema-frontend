@@ -1,4 +1,4 @@
-import { BarChart3, MapPin, Users } from "lucide-react";
+import { BarChart3, MapPin, UserCircle, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,19 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" className="flex items-center h-fit">
+              <UserCircle size={24} />
+              <div className="flex flex-col">
+                <span className="text-[1.05rem] font-semibold !text-wrap">
+                  Nombre usuario
+                </span>
+                <span className="text-sm">Coordinador</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
         <hr className="mt-2 border-neutral-400"></hr>
       </SidebarHeader>
       <SidebarContent>
