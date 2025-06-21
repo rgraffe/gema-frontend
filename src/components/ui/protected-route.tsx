@@ -11,7 +11,6 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  // const isAuthenticated = localStorage.getItem("authToken") !== null;
-  const isAuthenticated = true; // Simulación de autenticación, reemplazar con lógica real
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const isAuthenticated = localStorage.getItem("authToken") !== null;
+  return isAuthenticated ? children : <Navigate to="/iniciar-sesion" />;
 }
