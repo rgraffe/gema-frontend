@@ -25,7 +25,7 @@ type LoginParams = {
 type LoginResponse = {
   data: {
     token: string;
-    coordinador: {
+    usuario: {
       Id: number;
       Nombre: string;
       Correo: string;
@@ -34,7 +34,6 @@ type LoginResponse = {
   };
 };
 
-// Hook definido fuera de la función Login
 function useLoginRequest(options?: {
   onSuccess?: (data: LoginResponse) => void;
   onError?: (error: unknown) => void;
@@ -57,9 +56,10 @@ export default function Login() {
 
   const { mutate, isError, error } = useLoginRequest({
     onSuccess: (data) => {
-      // Si el login fue exitoso, guarda el token (por ejemplo en localStorage)
+      // Si el login fue exitoso, guarda el token y datos del usuario
       localStorage.setItem("authToken", data.data.token);
-      // Redirige a la ruta protegida /general
+      localStorage.setItem("username", data.data.usuario.Nombre);
+      localStorage.setItem("email", data.data.usuario.Correo);
       navigate("/general");
     },
     onError: (err) => {

@@ -17,7 +17,7 @@ const queryClient = new QueryClient();
 // Inicializar router de la aplicación
 const router = createBrowserRouter([
   {
-    path: "/login",
+    path: "/iniciar-sesion",
     element: <Login />,
   },
   {
