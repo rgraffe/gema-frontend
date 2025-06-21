@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Login from "./Auth/Login";
+import Login from "./pages/Login";
 import App from "./App";
 import ProtectedRoute from "./components/ui/protected-route";
 import "./index.css";
