@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react"
 import { UserCheck, ClipboardPen, Trash2, CirclePlus, X  } from "lucide-react"
-import { getGruposDeTrabajo } from "@/services/gruposDeTrabajo"
+import { createGrupoDeTrabajo, getGruposDeTrabajo } from "@/services/gruposDeTrabajo"
 
 interface GrupoTrabajo {
+  id: number,
   codigo: string
   nombre: string
-  supervisor: string
-  miembros: string
+  supervisorId: number | null;
 }
-
+interface Supervisor {
+  id: number;
+  nombre: string;
+}
 const GruposTrabajo: React.FC = () => {
   const [grupos, setGrupos] = useState<GrupoTrabajo[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -17,7 +20,7 @@ const GruposTrabajo: React.FC = () => {
   const [nuevoGrupo, setNuevoGrupo] = useState({
     codigo: '',
     nombre: '',
-    supervisor: ''
+    supervisorId: 0
   })
 
   useEffect(() => {
@@ -35,12 +38,12 @@ const GruposTrabajo: React.FC = () => {
     fetchGrupos()
   }, [])
 
-  const supervisores = [
-    "Carlos Rodríguez",
-    "Ana Garcia",
-    "Miguel Torres",
-    "Laura Mendoza",
-    "Sebastián Gomes"
+  const supervisores: Supervisor[] = [
+    { id: 1, nombre: "Carlos Rodríguez" },
+    { id: 2, nombre: "Ana Garcia" },
+    { id: 3, nombre: "Miguel Torres" },
+    { id: 4, nombre: "Laura Mendoza" },
+    { id: 7, nombre: "Sebastián Gomes" }
   ]
   /*
   const grupos: GrupoTrabajo[] = [
@@ -84,11 +87,24 @@ const GruposTrabajo: React.FC = () => {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Nuevo grupo:', nuevoGrupo)
-    setIsModalOpen(false)
-    setNuevoGrupo({ codigo: '', nombre: '', supervisor: '' })
+    try {
+      const supervisorId = nuevoGrupo.supervisorId
+
+      const nuevoGrupoCreado = await createGrupoDeTrabajo({
+        codigo: nuevoGrupo.codigo,
+        nombre: nuevoGrupo.nombre,
+        supervisorId: nuevoGrupo.supervisorId
+      });
+      
+      setGrupos(prev => [...prev, nuevoGrupoCreado.data]);
+
+      setIsModalOpen(false)
+      setNuevoGrupo({codigo:'', nombre:'', supervisorId: 0})
+    } catch (error: any) {
+      alert(`Error al crear el grupo: ${error.message}`);
+    }
   }
 
   if (isLoading) {
@@ -174,15 +190,15 @@ const GruposTrabajo: React.FC = () => {
                   </label>
                   <select
                     id="supervisor"
-                    name="supervisor"
-                    value={nuevoGrupo.supervisor}
+                    name="supervisorId"
+                    value={nuevoGrupo.supervisorId}
                     onChange={handleInputChange}
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     required
                   >
                     <option value="">Seleccione un supervisor</option>
                     {supervisores.map((sup, index) => (
-                      <option key={index} value={sup}>{sup}</option>
+                      <option key={index} value={sup.id}>{sup.nombre}</option>
                     ))}
                   </select>
                 </div>
@@ -233,12 +249,12 @@ const GruposTrabajo: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex items-center gap-2">
                     <UserCheck className="h-5 w-5 text-green-500" />
-                    <span>{grupo.supervisor}</span>
+                    <span>{grupo.supervisorId}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-200 font-medium">
-                    {grupo.miembros}
+                    {"----"}
                   </div>
                 </td>
                 <td className="flex items-center justify-evenly gap-2 px-6 py-4 whitespace-nowrap text-sm">
@@ -279,11 +295,11 @@ const GruposTrabajo: React.FC = () => {
                 
                 <div className="flex items-center space-x-2">
                   <UserCheck className="h-5 w-5 text-green-500" />
-                  <span className="text-sm">{grupo.supervisor}</span>
+                  <span className="text-sm">{grupo.supervisorId}</span>
                 </div>
                 
                 <div className="border-2 border-gray-300 rounded-lg bg-gray-200 font-medium px-3 py-1 inline-block text-sm">
-                  {grupo.miembros}
+                  {grupo.supervisorId}
                 </div>
               </div>
             </div>
