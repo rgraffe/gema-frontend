@@ -1,15 +1,20 @@
-import { Outlet } from 'react-router-dom'
-import Sidebar from './components/Sidebar'
+import { Outlet } from "react-router-dom";
+import { SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
+import { AppSidebar } from "./components/AppSidebar";
 
 function App() {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-4 lg:p-6">
-        <Outlet />
-      </main>
-    </div>
-  )
+    <SidebarProvider>
+      <div className="flex h-screen overflow-hidden">
+        {/* <Sidebar /> */}
+        <AppSidebar />
+        <main className="flex-1 overflow-auto p-4 lg:p-6 lg:pl-1 lg:pt-4">
+          <SidebarTrigger />
+          <Outlet />
+        </main>
+      </div>
+    </SidebarProvider>
+  );
 }
 
-export default App
+export default App;
