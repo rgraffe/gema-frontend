@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { loginSchema } from "./loginSchema";
+import { loginSchema } from "../validators/loginSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -75,6 +75,11 @@ export default function Login() {
     <div className="flex items-center justify-center h-screen">
       <Card className="md:w-96 w-2/3">
         <CardHeader>
+          <div className="flex flex-1 justify-center items-center gap-2 pb-1">
+            <img src="/gema-icono2.png" width="64" />
+            <h1 className="text-3xl font-bold mr-4 text-neutral-700">GEMA</h1>
+          </div>
+          <hr className="pb-2"></hr>
           <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
         </CardHeader>
         <CardContent>
