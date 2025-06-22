@@ -133,7 +133,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({ open, onClose }) => {
           </div>
           <div className="space-y-4">
             <div>
-              <Label>
+              <Label htmlFor="descripcion">
                 Descripción <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -143,9 +143,9 @@ const FormNuevaUbicacion: React.FC<Props> = ({ open, onClose }) => {
                 className="w-full border rounded p-2"
               />
             </div>
-            <div>
-              <Label>Vista previa del código:</Label>
-              <div className="bg-gray-100 p-2 rounded border font-mono text-sm">
+            <div className="bg-slate-200 p-4 pt-3 rounded-sm">
+              <span className="text-sm font-semibold">Vista previa del código:</span>
+              <div className="p-2 rounded border-2 border-neutral-300 font-mono text-sm">
                 {generarCodigo()}
               </div>
             </div>
