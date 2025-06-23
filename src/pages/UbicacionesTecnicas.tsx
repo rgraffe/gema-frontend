@@ -10,6 +10,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface DetalleUbicacion {
   codigo: string;
@@ -135,23 +141,26 @@ const UbicacionesTecnicas: React.FC = () => {
         />
       </Dialog>
 
-      <div className="space-y-4 w-2xl">
+      <Accordion
+        type="single"
+        collapsible
+        className="w-2xl shadow-md mb-2"
+        defaultValue={modulos[0]?.modulo}
+      >
         {modulos.map((modulo, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg shadow-md"
-          >
-            <div className="flex items-center gap-3 px-4 py-3 bg-gray-100 rounded-t-lg">
-              <Building className="text-blue-600 w-5 h-5" />
-              <h2 className="text-lg font-semibold">{modulo.modulo}</h2>
-              <span className="bg-gray-200 text-sm font-medium px-2 py-0.5 rounded-full ml-2">
-                {modulo.cantidad}
+          <AccordionItem key={index} value={modulo.modulo}>
+            <AccordionTrigger className="bg-gray-100 hover:bg-gray-200 px-3">
+              <span className="flex items-center gap-2">
+                <Building className="text-blue-600 w-5 h-5" />
+                <span className="text-lg font-semibold">{modulo.modulo}</span>
+                <span className="bg-gray-200 text-xs font-medium px-2 py-0.5 rounded-full ml-2 text-neutral-600">
+                  {modulo.cantidad} ubicaciones
+                </span>
               </span>
-            </div>
-
-            <div className="divide-y">
+            </AccordionTrigger>
+            <AccordionContent>
               {modulo.detalles.map((detalle, idx) => (
-                <div key={idx} className="flex p-4 hover:bg-gray-50">
+                <div key={idx} className="flex p-4 bg-white hover:bg-gray-50">
                   <div className="flex-3/5">
                     <p className="font-mono font-semibold text-sm">
                       {detalle.codigo}
@@ -181,10 +190,10 @@ const UbicacionesTecnicas: React.FC = () => {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   );
 };
