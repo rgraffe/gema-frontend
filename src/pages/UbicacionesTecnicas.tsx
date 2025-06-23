@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Eye, CirclePlus, Building, LoaderCircle } from "lucide-react";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CirclePlus, Building, LoaderCircle, Trash } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
 import { Button } from "@/components/ui/button";
-import { getUbicacionesTecnicas } from "@/services/ubicacionesTecnicas";
+import {
+  deleteUbicacionTecnica,
+  getUbicacionesTecnicas,
+} from "@/services/ubicacionesTecnicas";
 import {
   Tooltip,
   TooltipContent,
@@ -16,8 +19,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { toast } from "sonner";
 
 interface DetalleUbicacion {
+  idUbicacion: number;
   codigo: string;
   descripcion: string;
 }
@@ -39,8 +44,12 @@ const NIVELES = [
 ] as const;
 
 const UbicacionesTecnicas: React.FC = () => {
-  const [open, setOpen] = React.useState(false);
+  // Estado de diálogos
+  const [open, setOpen] = useState(false);
+  const [borrarUbicacion, setBorrarUbicacion] =
+    useState<DetalleUbicacion | null>(null);
 
+  // Estado para crear ubicación
   const [formValues, setFormValues] = useState({
     modulo: "",
     planta: "",
@@ -88,6 +97,20 @@ const UbicacionesTecnicas: React.FC = () => {
     queryFn: getUbicacionesTecnicas,
   });
 
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteUbicacionTecnica,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ubicacionesTecnicas"] });
+      setBorrarUbicacion(null);
+      toast.success("Ubicación técnica eliminada correctamente");
+    },
+    onError: () => {
+      toast.error(`Error al eliminar ubicación técnica`);
+    },
+  });
+
   // Agrupar ubicaciones por el primer segmento del campo codigo_Identificacion (Nivel 1)
   const modulos: Modulo[] = React.useMemo(() => {
     // Se espera que el servicio retorne un objeto con la propiedad 'data' que contiene el arreglo de ubicaciones
@@ -102,6 +125,7 @@ const UbicacionesTecnicas: React.FC = () => {
         }
         acc[key].cantidad += 1;
         acc[key].detalles.push({
+          idUbicacion: item.idUbicacion,
           codigo: item.codigo_Identificacion,
           descripcion: item.descripcion,
         });
@@ -141,15 +165,62 @@ const UbicacionesTecnicas: React.FC = () => {
         />
       </Dialog>
 
+      <Dialog
+        open={!!borrarUbicacion}
+        onOpenChange={(open) => {
+          if (!open) setBorrarUbicacion(null);
+        }}
+      >
+        <DialogContent className="min-w-xl">
+          <div>
+            <h2 className="font-semibold text-lg text-center mb-3">
+              ¿Seguro que desea eliminar esta ubicación técnica?
+            </h2>
+            <p className="text-center text-neutral-700">
+              Esto eliminará la ubicación, y todas las relacionadas
+            </p>
+            <ul className="mt-3 list-disc px-3 space-y-2">
+              <li className="text-neutral-700 text-sm">
+                <b>Nombre de la ubicación:</b> {borrarUbicacion?.descripcion}
+              </li>
+              <li className="text-neutral-700 text-sm">
+                <b>Código de identificación:</b> {borrarUbicacion?.codigo}
+              </li>
+            </ul>
+            <div className="flex justify-end gap-2 mt-2">
+              <Button
+                variant="outline"
+                onClick={() => setBorrarUbicacion(null)}
+                disabled={deleteMutation.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() =>
+                  deleteMutation.mutate(borrarUbicacion?.idUbicacion || 0)
+                }
+                disabled={deleteMutation.isPending}
+              >
+                <Trash /> Eliminar{" "}
+                {deleteMutation.isPending && (
+                  <LoaderCircle className="animate-spin ml-2" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Accordion
         type="single"
         collapsible
-        className="w-2xl shadow-md mb-2"
+        className="w-2xl shadow-md mb-2 bg-white rounded-md"
         defaultValue={modulos[0]?.modulo}
       >
         {modulos.map((modulo, index) => (
           <AccordionItem key={index} value={modulo.modulo}>
-            <AccordionTrigger className="bg-gray-100 hover:bg-gray-200 px-3">
+            <AccordionTrigger className="bg-gray-100 hover:bg-gray-200 hover:cursor-pointer px-3">
               <span className="flex items-center gap-2">
                 <Building className="text-blue-600 w-5 h-5" />
                 <span className="text-lg font-semibold">{modulo.modulo}</span>
@@ -170,9 +241,6 @@ const UbicacionesTecnicas: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex flex-2/5 items-center justify-end gap-1">
-                    <Button variant="ghost" className="text-gray-500 !px-2">
-                      <Eye />
-                    </Button>
                     <Tooltip>
                       <TooltipTrigger>
                         <Button
@@ -185,6 +253,20 @@ const UbicacionesTecnicas: React.FC = () => {
                       </TooltipTrigger>
                       <TooltipContent>
                         <span>Crear ubicación a partir de esta</span>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button
+                          variant="ghost"
+                          className="text-red-500 !px-2 hover:text-red-600"
+                          onClick={() => setBorrarUbicacion(detalle)}
+                        >
+                          <Trash />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span>Eliminar ubicación</span>
                       </TooltipContent>
                     </Tooltip>
                   </div>
