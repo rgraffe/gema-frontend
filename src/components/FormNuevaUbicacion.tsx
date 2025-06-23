@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import {
   createUbicacionTecnica,
   getUbicacionesTecnicas,
 } from "@/services/ubicacionesTecnicas";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Trash } from "lucide-react";
 
 // Definición del payload
 type CreateUbicacionTecnicaPayload = {
@@ -17,25 +16,34 @@ type CreateUbicacionTecnicaPayload = {
   padres?: { idPadre: number; esUbicacionFisica?: boolean }[];
 };
 
+type UbicacionTecnicaForm = {
+  modulo: string;
+  planta: string;
+  espacio: string;
+  tipo: string;
+  subtipo: string;
+  numero: string;
+  pieza: string;
+  descripcion: string;
+};
+
 interface Props {
   open: boolean;
   onClose: () => void;
+  formValues: UbicacionTecnicaForm;
+  setFormValues: React.Dispatch<React.SetStateAction<UbicacionTecnicaForm>>;
+  displayedLevels: number;
+  setDisplayedLevels: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const FormNuevaUbicacion: React.FC<Props> = ({ open, onClose }) => {
-  const [formValues, setFormValues] = useState({
-    modulo: "",
-    planta: "",
-    espacio: "",
-    tipo: "",
-    subtipo: "",
-    numero: "",
-    pieza: "",
-    descripcion: "",
-  });
-
-  const [displayedLevels, setDisplayedLevels] = useState<number>(1);
-
+const FormNuevaUbicacion: React.FC<Props> = ({
+  open,
+  onClose,
+  formValues,
+  setFormValues,
+  displayedLevels,
+  setDisplayedLevels,
+}) => {
   const closeModal = () => {
     setDisplayedLevels(1);
     onClose();
@@ -224,16 +232,54 @@ const FormNuevaUbicacion: React.FC<Props> = ({ open, onClose }) => {
                 />
               </div>
             )}
-            {displayedLevels < 7 && (
-              <Button
-                className="w-full mt-1 border-gema-green text-green-700 hover:text-green-800"
-                variant="outline"
-                onClick={() => setDisplayedLevels((prev) => prev + 1)}
-              >
-                <PlusCircle />
-                Agregar nivel
-              </Button>
-            )}
+            <div className="flex gap-2 mt-1">
+              {displayedLevels >= 2 && (
+                <Button
+                  className="flex-1 border-red-500 text-red-700 hover:text-red-800"
+                  variant="outline"
+                  onClick={() => {
+                    setDisplayedLevels((prev) => Math.max(prev - 1, 1));
+                    // Limpiar el último nivel al eliminarlo
+                    setFormValues((prev) => {
+                      const newValues = { ...prev };
+                      switch (displayedLevels) {
+                        case 2:
+                          newValues.planta = "";
+                          break;
+                        case 3:
+                          newValues.espacio = "";
+                          break;
+                        case 4:
+                          newValues.tipo = "";
+                          break;
+                        case 5:
+                          newValues.subtipo = "";
+                          break;
+                        case 6:
+                          newValues.numero = "";
+                          break;
+                        case 7:
+                          newValues.pieza = "";
+                          break;
+                      }
+                      return newValues;
+                    });
+                  }}
+                >
+                  <Trash /> Eliminar último nivel
+                </Button>
+              )}
+              {displayedLevels < 7 && (
+                <Button
+                  className="flex-1 border-gema-green text-green-700 hover:text-green-800"
+                  variant="outline"
+                  onClick={() => setDisplayedLevels((prev) => prev + 1)}
+                >
+                  <PlusCircle />
+                  Agregar nivel
+                </Button>
+              )}
+            </div>
           </div>
           <div className="space-y-4">
             <div>
