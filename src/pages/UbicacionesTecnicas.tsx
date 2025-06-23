@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Eye, CirclePlus, Building } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import FormNuevaUbicacion from "@/components/FormNuevaUbicacion.tsx";
+import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
 import { Button } from "@/components/ui/button";
+import { getUbicacionesTecnicas } from "@/services/ubicacionesTecnicas";
 
 interface DetalleUbicacion {
   codigo: string;
@@ -16,59 +18,40 @@ interface Modulo {
 }
 
 const UbicacionesTecnicas: React.FC = () => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = React.useState(false);
 
-  const ubicaciones: Modulo[] = [
-    {
-      modulo: "MO1",
-      cantidad: 2,
-      detalles: [
-        {
-          codigo: "M01-P01-A101-HVAC-SPLIT-01-COMP",
-          descripcion:
-            "Módulo 1, Planta 1, Aula 101, Aire Acondicionado Split, Compresor",
-        },
-        {
-          codigo: "M01-P01-A102-ELEC-ILUM-01",
-          descripcion:
-            "Módulo 1, Planta 1, Aula 102, Sistema Eléctrico, Iluminación",
-        },
-      ],
-    },
-    {
-      modulo: "MO2",
-      cantidad: 1,
-      detalles: [
-        {
-          codigo: "M02-P02-LAB1-HVAC-CENT-01-EVAP",
-          descripcion:
-            "Módulo 2, Planta 2, Laboratorio 1, Aire Acondicionado Central, Evaporador",
-        },
-      ],
-    },
-    {
-      modulo: "MO3",
-      cantidad: 1,
-      detalles: [
-        {
-          codigo: "M03-P01-BIBLIO-ELEC-TOMA-01",
-          descripcion:
-            "Módulo 3, Planta 1, Biblioteca, Sistema Eléctrico, Tomacorrientes",
-        },
-      ],
-    },
-    {
-      modulo: "MO4",
-      cantidad: 1,
-      detalles: [
-        {
-          codigo: "M04-P01-ADMIN-INFR-PUER-01",
-          descripcion:
-            "Módulo 4, Planta 1, Administración, Infraestructura, Puerta Principal",
-        },
-      ],
-    },
-  ];
+  // Usamos useQuery para llamar al servicio getUbicacionesTecnicas
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["ubicacionesTecnicas"],
+    queryFn: getUbicacionesTecnicas,
+  });
+
+  // Agrupar ubicaciones por el primer segmento del campo codigo_Identificacion (Nivel 1)
+  const modulos: Modulo[] = React.useMemo(() => {
+    // Se espera que el servicio retorne un objeto con la propiedad 'data' que contiene el arreglo de ubicaciones
+    if (!data || !data.data) return [];
+    const ubicaciones = data.data;
+    const agrupados = ubicaciones.reduce(
+      (acc: Record<string, Modulo>, item: any) => {
+        // Se asume que el módulo es el primer segmento del codigo_Identificacion
+        const key = item.codigo_Identificacion.split("-")[0];
+        if (!acc[key]) {
+          acc[key] = { modulo: key, cantidad: 0, detalles: [] };
+        }
+        acc[key].cantidad += 1;
+        acc[key].detalles.push({
+          codigo: item.codigo_Identificacion,
+          descripcion: item.descripcion,
+        });
+        return acc;
+      },
+      {} as Record<string, Modulo>
+    );
+    return Object.values(agrupados);
+  }, [data]);
+
+  if (isLoading) return <div>Cargando...</div>;
+  if (error) return <div>Error al obtener ubicaciones técnicas</div>;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -81,13 +64,11 @@ const UbicacionesTecnicas: React.FC = () => {
             Crear nueva ubicación
           </Button>
         </DialogTrigger>
-
-        {/* Formulario modal reutilizable */}
         <FormNuevaUbicacion open={open} onClose={() => setOpen(false)} />
       </Dialog>
 
       <div className="space-y-4">
-        {ubicaciones.map((modulo, index) => (
+        {modulos.map((modulo, index) => (
           <div
             key={index}
             className="bg-white border border-gray-200 rounded-lg shadow-md"
