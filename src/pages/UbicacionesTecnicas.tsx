@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, CirclePlus, Building } from "lucide-react";
+import { Eye, CirclePlus, Building, LoaderCircle } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ const UbicacionesTecnicas: React.FC = () => {
     return Object.values(agrupados);
   }, [data]);
 
-  if (isLoading) return <div>Cargando...</div>;
+  if (isLoading) return <div className="p-6"><LoaderCircle className="animate-spin" /></div>;
   if (error) return <div>Error al obtener ubicaciones técnicas</div>;
 
   return (
