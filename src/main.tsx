@@ -37,11 +37,11 @@ const router = createBrowserRouter([
         element: <VistaGeneral />,
       },
       {
-        path: "locations",
+        path: "ubicaciones-tecnicas",
         element: <UbicacionesTecnicas />,
       },
       {
-        path: "groups",
+        path: "grupos",
         element: <GruposTrabajo />,
       },
     ],
