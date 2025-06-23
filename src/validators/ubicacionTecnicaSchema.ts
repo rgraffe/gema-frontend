@@ -13,7 +13,7 @@ export const ubicacionTecnicaSchema = z.object({
   abreviacion: z
     .string({ required_error: "La abreviación es requerida" })
     .min(1, "La abreviación no puede estar vacía")
-    .max(5, "La abreviación debe tener como máximo 26 caracteres"),
+    .max(5, "La abreviación debe tener como máximo 5 caracteres"),
   padres: z
     .array(
       z.object({
