@@ -54,7 +54,7 @@ const UbicacionesTecnicas: React.FC = () => {
   if (error) return <div>Error al obtener ubicaciones técnicas</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 mx-auto">
       <h1 className="text-2xl font-bold mb-3">Ubicaciones Técnicas</h1>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -67,7 +67,7 @@ const UbicacionesTecnicas: React.FC = () => {
         <FormNuevaUbicacion open={open} onClose={() => setOpen(false)} />
       </Dialog>
 
-      <div className="space-y-4">
+      <div className="space-y-4 w-2xl">
         {modulos.map((modulo, index) => (
           <div
             key={index}

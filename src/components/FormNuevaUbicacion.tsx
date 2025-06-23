@@ -112,7 +112,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="min-w-6xl" contentClassName="space-y-2">
+      <DialogContent className="w-6xl md:min-w-5xl" contentClassName="space-y-2">
         <h2 className="text-xl font-semibold">Crear Ubicación Técnica</h2>
         <div className="grid grid-cols-2 gap-8">
           <div className="space-y-2">
