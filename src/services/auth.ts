@@ -27,3 +27,13 @@ export async function login({
   }
   return resp.json();
 }
+
+/**
+ * Elimina los datos de sesión del usuario actual
+ * @author gabrielm
+ */
+export function logout() {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("username");
+  localStorage.removeItem("email");
+}
