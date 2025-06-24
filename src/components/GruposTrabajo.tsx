@@ -85,14 +85,27 @@ const GruposTrabajo: React.FC = () => {
     e.preventDefault();
     try {
       const supervisorId = nuevoGrupo.supervisorId;
-
+      console.log("ID del supervisor seleccionado: ", supervisorId)
       const nuevoGrupoCreado = await createGrupoDeTrabajo({
         codigo: nuevoGrupo.codigo,
         nombre: nuevoGrupo.nombre,
         supervisorId: nuevoGrupo.supervisorId,
       });
+      console.log("GrupoCreado:", nuevoGrupoCreado.data)
+      setGrupos((prev) => [
+  ...prev,
+  {
+    id: nuevoGrupoCreado.data.grupo.id,
+    codigo: nuevoGrupoCreado.data.grupo.codigo,
+    nombre: nuevoGrupoCreado.data.grupo.nombre,
+    supervisorId: nuevoGrupoCreado.data.grupo.supervisorId,
+  },
+]);
 
-      setGrupos((prev) => [...prev, nuevoGrupoCreado.data]);
+      setTrabajadoresPorGrupo((prev) => ({
+        ...prev,
+        [nuevoGrupoCreado.data.id]: [],
+      }));
 
       setIsModalOpen(false);
       setNuevoGrupo({ codigo: "", nombre: "", supervisorId: 0 });
@@ -146,7 +159,7 @@ const handleRemoveTecnico = async (tecnicoId: number) => {
   };
 
   const getSupervisorNombre = (id: number | null) => {
-    return tecnicosDisponibles.find(s => s.id === id)?.nombre || "No asignado";
+    return tecnicosDisponibles.find(s => s.Id === id)?.Nombre || "No asignado";
   };
 
   if (isLoading) {
@@ -227,7 +240,7 @@ const handleRemoveTecnico = async (tecnicoId: number) => {
               >
                 <option value="">Seleccione un supervisor</option>
                 {tecnicosDisponibles.map((sup) => (
-                  <option key={sup.id} value={sup.id}>
+                  <option key={sup.Id} value={sup.Id}>
                     {sup.Nombre} ({sup.Correo})
                   </option>
                 ))}
@@ -353,7 +366,7 @@ const handleRemoveTecnico = async (tecnicoId: number) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {grupos.map((grupo) => (
+            {grupos.map((grupo) => ((console.log("grupo", grupo)),
               <tr key={grupo.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg font-bold">
