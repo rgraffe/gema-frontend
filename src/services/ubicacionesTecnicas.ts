@@ -1,8 +1,4 @@
-/**
- * Servicio para manejar las operaciones de Ubicaciones Técnicas.
- * Realiza peticiones fetch a los endpoints del backend para gestionar las ubicaciones técnicas.
- * @author janbertorelli
- */
+import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
 
 /**
  * Obtiene todas las ubicaciones técnicas.
@@ -22,7 +18,8 @@ export async function getUbicacionesTecnicas() {
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(
-      data.error || "Error al obtener las ubicaciones técnicas, por favor intente de nuevo."
+      data.error ||
+        "Error al obtener las ubicaciones técnicas, por favor intente de nuevo."
     );
   }
   return resp.json();
@@ -55,7 +52,8 @@ export async function createUbicacionTecnica(params: {
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(
-      data.error || "Error al crear la ubicación técnica, por favor intente de nuevo."
+      data.error ||
+        "Error al crear la ubicación técnica, por favor intente de nuevo."
     );
   }
   return resp.json();
@@ -92,7 +90,8 @@ export async function updateUbicacionTecnica(
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(
-      data.error || "Error al actualizar la ubicación técnica, por favor intente de nuevo."
+      data.error ||
+        "Error al actualizar la ubicación técnica, por favor intente de nuevo."
     );
   }
   return resp.json();
@@ -117,8 +116,32 @@ export async function deleteUbicacionTecnica(id: number) {
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(
-      data.error || "Error al eliminar la ubicación técnica, por favor intente de nuevo."
+      data.error ||
+        "Error al eliminar la ubicación técnica, por favor intente de nuevo."
     );
   }
   return resp.json();
+}
+
+/**
+ * Obtiene la cantidad de ubicaciones dependientes de una ubicación técnica.
+ * @author gabrielm
+ * @param id
+ */
+export async function getUbicacionesDependientes(id: number) {
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+  const token = localStorage.getItem("authToken");
+  const resp = await fetch(`${BASE_URL}/ubicaciones-tecnicas/ramas/${id}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(
+      data.error || "Error al obtener dependencias de la ubicación técnica"
+    );
+  }
+  return resp.json() as Promise<{ data: UbicacionTecnica[] }>;
 }
