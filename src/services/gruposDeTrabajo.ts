@@ -109,5 +109,74 @@ export async function getAllWorkersInALLGroups() {
   }
   
   return resp.json();
+}
 
+/**
+ * Asigna un técnico a un grupo de trabajo
+ * @author AndresChacon00
+ * @param tecnicoId - ID del tecnico a asignar
+ * @param grupoDeTrabajoId - ID del grupo de trabajo
+ */
+export async function addTecnicoToGrupo({
+  tecnicoId,
+  grupoDeTrabajoId,
+}: {
+  tecnicoId: number,
+  grupoDeTrabajoId: number
+}) {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación");
+  }
+
+  const resp = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ tecnicoId, grupoDeTrabajoId})
+  });
+  if (!resp.ok){
+    const data = await resp.json();
+    throw new Error(data.error || "Error al agregar el técnico al grupo.");
+  }
+  return resp.json();
+}
+
+/**
+ * Elimina un técnico de un grupo de trabajo.
+ * @author AndresChacon00
+ * @param tecnicoId - ID del técnico a eliminar
+ * @param grupoDeTrabajoId - ID del grupo de trabajo
+ */
+export async function deleteTecnicoFromGrupo({
+  tecnicoId,
+  grupoDeTrabajoId,
+}: {
+  tecnicoId: number;
+  grupoDeTrabajoId: number;
+}) {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación");
+  }
+
+  const resp = await fetch(
+    `${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo/${tecnicoId}/${grupoDeTrabajoId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(data.error || "Error al eliminar el técnico del grupo.");
+  }
+
+  return resp.json();
 }

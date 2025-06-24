@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { UserCheck, ClipboardPen, Trash2, CirclePlus, UserPlus, UserMinus } from "lucide-react";
 import {
+  addTecnicoToGrupo,
   createGrupoDeTrabajo,
   getAllWorkersInALLGroups,
   getGruposDeTrabajo,
@@ -98,6 +99,45 @@ const GruposTrabajo: React.FC = () => {
       alert(`Error al crear el grupo: ${error.message}`);
     }
   };
+
+  const handleAddTecnico = async () => {
+    if (!selectedGrupoId || !tecnicoSeleccionado) return;
+
+    try {
+      await addTecnicoToGrupo({
+        tecnicoId: tecnicoSeleccionado,
+        grupoDeTrabajoId: selectedGrupoId
+      })
+      setTrabajadoresPorGrupo((prev) => {
+      const nuevos = tecnicosDisponibles.find(t => t.Id === tecnicoSeleccionado);
+      if (!nuevos) return prev;
+      return {
+        ...prev,
+        [selectedGrupoId]: [...(prev[selectedGrupoId] || []), nuevos],
+      };
+    });
+    setTecnicoSeleccionado(0);
+  } catch (error: any) {
+    alert(error.message || "Error al agregar técnico");
+  }
+};
+
+const handleRemoveTecnico = async (tecnicoId: number) => {
+  if (!selectedGrupoId) return;
+  try {
+    await removeTecnicoFromGrupo({
+      tecnicoId,
+      grupoDeTrabajoId: selectedGrupoId,
+    });
+    setTrabajadoresPorGrupo((prev) => ({
+      ...prev,
+      [selectedGrupoId]: prev[selectedGrupoId].filter((t: any) => t.Id !== tecnicoId),
+    }));
+  } catch (error: any) {
+    alert(error.message || "Error al eliminar técnico");
+  }
+};
+
 
   const openTecnicosModal = (grupoId: number) => {
     setSelectedGrupoId(grupoId);
@@ -234,13 +274,17 @@ const GruposTrabajo: React.FC = () => {
                 <select
                   id="tecnico"
                   name="tecnicoId"
-                  value={tecnicoSeleccionado}
+                  value={tecnicoSeleccionado || ''}
                   onChange={handleTecnicoSelectChange}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 >
                   <option value="0">Seleccione un técnico</option>
-                  {tecnicosDisponibles.map((tec) => (
-                    <option key={tec.id} value={tec.id}>
+                  {tecnicosDisponibles
+                  .filter(tec =>
+                    !(trabajadoresPorGrupo[selectedGrupoId]?.some((t: any) => t.Id === tec.Id))
+                  )
+                  .map((tec) => (
+                    <option key={tec.Id} value={tec.Id}>
                       {tec.Nombre} ({tec.Correo})
                     </option>
                   ))}
@@ -248,6 +292,9 @@ const GruposTrabajo: React.FC = () => {
                 <div className="flex justify-end mt-2">
                   <Button 
                     className="bg-gema-green hover:bg-green-700"
+                    onClick={handleAddTecnico}
+                    disabled={!tecnicoSeleccionado}
+                    type='button'
                   >
                     <UserPlus className="mr-2" />
                     Agregar Técnico
