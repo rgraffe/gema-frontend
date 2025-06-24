@@ -7,6 +7,7 @@ import {
 } from "@/services/gruposDeTrabajo";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { getTecnicos } from "@/services/tecnicos";
 
 interface GrupoTrabajo {
   id: number;
@@ -27,8 +28,8 @@ interface Tecnico {
 }
 
 const GruposTrabajo: React.FC = () => {
-    const [trabajadoresPorGrupo, setTrabajadoresPorGrupo] = useState<Record<number, any[]>>({});
-  
+  const [trabajadoresPorGrupo, setTrabajadoresPorGrupo] = useState<Record<number, any[]>>({});
+  const [tecnicosDisponibles, setTecnicosDisponibles] = useState<any[]>([])
   const [grupos, setGrupos] = useState<GrupoTrabajo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +44,8 @@ const GruposTrabajo: React.FC = () => {
   const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState<number>(0);
 
   // Mock de técnicos disponibles (simulando una base de datos)
+  /*
+
   const tecnicosDisponibles: Tecnico[] = [
     { id: 1, nombre: "Juan Pérez", puesto: "Técnico Senior" },
     { id: 2, nombre: "María García", puesto: "Técnico Junior" },
@@ -50,6 +53,7 @@ const GruposTrabajo: React.FC = () => {
     { id: 4, nombre: "Ana Martínez", puesto: "Mecánico" },
     { id: 5, nombre: "Luis Fernández", puesto: "Refrigeración" }
   ];
+   */
 
   // Mock de técnicos asignados por grupo
   /*
@@ -77,9 +81,12 @@ const GruposTrabajo: React.FC = () => {
           map[item.grupoDeTrabajoId] = item.usuarios;
         });
         setTrabajadoresPorGrupo(map);
-        console.log("map: ")
-        console.log(map)
-        console.log(trabajadoresResp)
+        
+
+        // Obtener tecnicos existentes
+        const tecnicosResp = await getTecnicos();
+        setTecnicosDisponibles(tecnicosResp.data);
+
       } catch (error: any) {
         setError(error.message);
       } finally {
@@ -88,7 +95,7 @@ const GruposTrabajo: React.FC = () => {
     };
     fetchGrupos();
   }, []);
-
+/*
   const supervisores: Supervisor[] = [
     { id: 1, nombre: "Carlos Rodríguez" },
     { id: 2, nombre: "Ana Garcia" },
@@ -96,7 +103,7 @@ const GruposTrabajo: React.FC = () => {
     { id: 4, nombre: "Laura Mendoza" },
     { id: 7, nombre: "Sebastián Gomes" },
   ];
-
+*/
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -140,7 +147,7 @@ const GruposTrabajo: React.FC = () => {
   };
 
   const getSupervisorNombre = (id: number | null) => {
-    return supervisores.find(s => s.id === id)?.nombre || "No asignado";
+    return tecnicosDisponibles.find(s => s.id === id)?.nombre || "No asignado";
   };
 
   if (isLoading) {
@@ -220,9 +227,9 @@ const GruposTrabajo: React.FC = () => {
                 required
               >
                 <option value="">Seleccione un supervisor</option>
-                {supervisores.map((sup) => (
+                {tecnicosDisponibles.map((sup) => (
                   <option key={sup.id} value={sup.id}>
-                    {sup.nombre}
+                    {sup.Nombre} ({sup.Correo})
                   </option>
                 ))}
               </select>
@@ -276,7 +283,7 @@ const GruposTrabajo: React.FC = () => {
                   <option value="0">Seleccione un técnico</option>
                   {tecnicosDisponibles.map((tec) => (
                     <option key={tec.id} value={tec.id}>
-                      {tec.nombre} ({tec.puesto})
+                      {tec.Nombre} ({tec.Correo})
                     </option>
                   ))}
                 </select>
