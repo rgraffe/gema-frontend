@@ -3,6 +3,7 @@ import { UserCheck, ClipboardPen, Trash2, CirclePlus, UserPlus, UserMinus } from
 import {
   addTecnicoToGrupo,
   createGrupoDeTrabajo,
+  deleteTecnicoFromGrupo,
   getAllWorkersInALLGroups,
   getGruposDeTrabajo,
 } from "@/services/gruposDeTrabajo";
@@ -125,7 +126,7 @@ const GruposTrabajo: React.FC = () => {
 const handleRemoveTecnico = async (tecnicoId: number) => {
   if (!selectedGrupoId) return;
   try {
-    await removeTecnicoFromGrupo({
+    await deleteTecnicoFromGrupo({
       tecnicoId,
       grupoDeTrabajoId: selectedGrupoId,
     });
@@ -314,6 +315,7 @@ const handleRemoveTecnico = async (tecnicoId: number) => {
                       <Button
                         variant="ghost"
                         className="text-red-500 hover:text-red-700"
+                        onClick={() => handleRemoveTecnico(tecnico.Id)}
                       >
                         <UserMinus />
                       </Button>
