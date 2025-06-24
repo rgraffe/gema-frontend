@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { UserCheck, ClipboardPen, Trash2, CirclePlus } from "lucide-react";
+import { UserCheck, ClipboardPen, Trash2, CirclePlus, UserPlus, UserMinus } from "lucide-react";
 import {
   createGrupoDeTrabajo,
   getGruposDeTrabajo,
@@ -13,22 +13,53 @@ interface GrupoTrabajo {
   nombre: string;
   supervisorId: number | null;
 }
+
 interface Supervisor {
   id: number;
   nombre: string;
 }
+
+interface Tecnico {
+  id: number;
+  nombre: string;
+  puesto: string;
+}
+
 const GruposTrabajo: React.FC = () => {
   const [grupos, setGrupos] = useState<GrupoTrabajo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTecnicosModalOpen, setIsTecnicosModalOpen] = useState(false);
+  const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null);
   const [nuevoGrupo, setNuevoGrupo] = useState({
     codigo: "",
     nombre: "",
     supervisorId: 0,
   });
+  const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState<number>(0);
 
-  useEffect(() => {
+  // Mock de técnicos disponibles (simulando una base de datos)
+  const tecnicosDisponibles: Tecnico[] = [
+    { id: 1, nombre: "Juan Pérez", puesto: "Técnico Senior" },
+    { id: 2, nombre: "María García", puesto: "Técnico Junior" },
+    { id: 3, nombre: "Carlos López", puesto: "Electricista" },
+    { id: 4, nombre: "Ana Martínez", puesto: "Mecánico" },
+    { id: 5, nombre: "Luis Fernández", puesto: "Refrigeración" }
+  ];
+
+  // Mock de técnicos asignados por grupo
+  const tecnicosAsignados: Record<number, Tecnico[]> = {
+    1: [
+      { id: 1, nombre: "Juan Pérez", puesto: "Técnico Senior" },
+      { id: 2, nombre: "María García", puesto: "Técnico Junior" }
+    ],
+    2: [
+      { id: 3, nombre: "Carlos López", puesto: "Electricista" }
+    ]
+  };
+
+   useEffect(() => {
     const fetchGrupos = async () => {
       try {
         const response = await getGruposDeTrabajo();
@@ -84,6 +115,7 @@ const GruposTrabajo: React.FC = () => {
     },
   ]*/
 
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -92,6 +124,12 @@ const GruposTrabajo: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleTecnicoSelectChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setTecnicoSeleccionado(Number(e.target.value));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,6 +150,15 @@ const GruposTrabajo: React.FC = () => {
     } catch (error: any) {
       alert(`Error al crear el grupo: ${error.message}`);
     }
+  };
+
+  const openTecnicosModal = (grupoId: number) => {
+    setSelectedGrupoId(grupoId);
+    setIsTecnicosModalOpen(true);
+  };
+
+  const getSupervisorNombre = (id: number | null) => {
+    return supervisores.find(s => s.id === id)?.nombre || "No asignado";
   };
 
   if (isLoading) {
@@ -191,8 +238,8 @@ const GruposTrabajo: React.FC = () => {
                 required
               >
                 <option value="">Seleccione un supervisor</option>
-                {supervisores.map((sup, index) => (
-                  <option key={index} value={sup.id}>
+                {supervisores.map((sup) => (
+                  <option key={sup.id} value={sup.id}>
                     {sup.nombre}
                   </option>
                 ))}
@@ -218,8 +265,77 @@ const GruposTrabajo: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Modal para gestión de técnicos */}
+      <Dialog open={isTecnicosModalOpen} onOpenChange={setIsTecnicosModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">
+              Técnicos del Grupo {grupos.find(g => g.id === selectedGrupoId)?.codigo}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedGrupoId && (
+            <div className="space-y-4">
+              {/* Formulario para agregar técnico */}
+              <div className="mb-6">
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="tecnico"
+                >
+                  Agregar Técnico
+                </label>
+                <select
+                  id="tecnico"
+                  name="tecnicoId"
+                  value={tecnicoSeleccionado}
+                  onChange={handleTecnicoSelectChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="0">Seleccione un técnico</option>
+                  {tecnicosDisponibles.map((tec) => (
+                    <option key={tec.id} value={tec.id}>
+                      {tec.nombre} ({tec.puesto})
+                    </option>
+                  ))}
+                </select>
+                <div className="flex justify-end mt-2">
+                  <Button 
+                    className="bg-gema-green hover:bg-green-700"
+                  >
+                    <UserPlus className="mr-2" />
+                    Agregar Técnico
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Lista de técnicos */}
+              <div className="border rounded-lg divide-y">
+                {tecnicosAsignados[selectedGrupoId]?.length ? (
+                  tecnicosAsignados[selectedGrupoId].map(tecnico => (
+                    <div key={tecnico.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                      <div>
+                        <p className="font-medium">{tecnico.nombre}</p>
+                        <p className="text-sm text-gray-600">{tecnico.puesto}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <UserMinus />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="p-4 text-gray-500 text-center">No hay técnicos en este grupo</p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div className="overflow-x-auto">
-        {/* tabla en dektop */}
+        {/* Tabla en desktop */}
         <table className="hidden md:table min-w-full bg-white border border-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -233,7 +349,7 @@ const GruposTrabajo: React.FC = () => {
                 Supervisor
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Miembros
+                Técnicos
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
@@ -241,8 +357,8 @@ const GruposTrabajo: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {grupos.map((grupo, index) => (
-              <tr key={index}>
+            {grupos.map((grupo) => (
+              <tr key={grupo.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg font-bold">
                     {grupo.codigo}
@@ -254,12 +370,15 @@ const GruposTrabajo: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex items-center gap-2">
                     <UserCheck className="h-5 w-5 text-green-500" />
-                    <span>{grupo.supervisorId}</span>
+                    <span>{getSupervisorNombre(grupo.supervisorId)}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-200 font-medium">
-                    {"----"}
+                <td 
+                  className="px-6 py-4 whitespace-nowrap text-sm cursor-pointer"
+                  onClick={() => openTecnicosModal(grupo.id)}
+                >
+                  <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-200 font-medium hover:bg-gray-300 transition">
+                    {tecnicosAsignados[grupo.id]?.length || 0}
                   </div>
                 </td>
                 <td className="flex items-center justify-evenly gap-2 px-6 py-4 whitespace-nowrap text-sm">
@@ -275,11 +394,11 @@ const GruposTrabajo: React.FC = () => {
           </tbody>
         </table>
 
-        {/* cards en movil */}
+        {/* Cards en móvil */}
         <div className="md:hidden space-y-4">
-          {grupos.map((grupo, index) => (
+          {grupos.map((grupo) => (
             <div
-              key={index}
+              key={grupo.id}
               className="bg-white p-4 rounded-lg shadow border border-gray-200"
             >
               <div className="space-y-3">
@@ -303,11 +422,14 @@ const GruposTrabajo: React.FC = () => {
 
                 <div className="flex items-center space-x-2">
                   <UserCheck className="h-5 w-5 text-green-500" />
-                  <span className="text-sm">{grupo.supervisorId}</span>
+                  <span className="text-sm">{getSupervisorNombre(grupo.supervisorId)}</span>
                 </div>
 
-                <div className="border-2 border-gray-300 rounded-lg bg-gray-200 font-medium px-3 py-1 inline-block text-sm">
-                  {grupo.supervisorId}
+                <div 
+                  className="border-2 border-gray-300 rounded-lg bg-gray-200 font-medium px-3 py-1 inline-block text-sm cursor-pointer hover:bg-gray-300"
+                  onClick={() => openTecnicosModal(grupo.id)}
+                >
+                  {tecnicosAsignados[grupo.id]?.length || 0} Técnicos
                 </div>
               </div>
             </div>
