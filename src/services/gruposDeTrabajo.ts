@@ -180,3 +180,34 @@ export async function deleteTecnicoFromGrupo({
 
   return resp.json();
 }
+
+/**
+ * Elimina un grupo de trabajo por su ID.
+ * @author AndresChacon00
+ * @param grupoDeTrabajoId - ID del grupo de trabajo a eliminar
+ * @throws Error si la petición falla o no hay token de autenticación.
+ */
+export async function deleteGrupoDeTrabajo(grupoDeTrabajoId: number) {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación");
+  }
+
+  const resp = await fetch(
+    `${import.meta.env.VITE_BACKEND_BASE_URL}/grupos/${grupoDeTrabajoId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(data.error || "Error al eliminar el grupo de trabajo.");
+  }
+
+  return resp.json();
+}

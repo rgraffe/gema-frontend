@@ -3,6 +3,7 @@ import { UserCheck, ClipboardPen, Trash2, CirclePlus, UserPlus, UserMinus } from
 import {
   addTecnicoToGrupo,
   createGrupoDeTrabajo,
+  deleteGrupoDeTrabajo,
   deleteTecnicoFromGrupo,
   getAllWorkersInALLGroups,
   getGruposDeTrabajo,
@@ -152,7 +153,20 @@ const handleRemoveTecnico = async (tecnicoId: number) => {
   }
 };
 
-
+const handleDeleteGrupo = async (grupoId: number) => {
+  if (!window.confirm("¿Seguro que deseas eliminar este grupo?")) return;
+  try {
+    await deleteGrupoDeTrabajo(grupoId);
+    setGrupos((prev) => prev.filter((g) => g.id !== grupoId));
+    setTrabajadoresPorGrupo((prev) => {
+      const nuevo = { ...prev };
+      delete nuevo[grupoId];
+      return nuevo;
+    });
+  } catch (error: any) {
+    alert(error.message || "Error al eliminar el grupo");
+  }
+};
   const openTecnicosModal = (grupoId: number) => {
     setSelectedGrupoId(grupoId);
     setIsTecnicosModalOpen(true);
@@ -395,7 +409,10 @@ const handleRemoveTecnico = async (tecnicoId: number) => {
                     <ClipboardPen className="h-5 w-5 text-blue-500 cursor-pointer" />
                   </div>
                   <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
-                    <Trash2 className="h-5 w-5 text-red-500 cursor-pointer" />
+                    <Trash2 
+                      className="h-5 w-5 text-red-500 cursor-pointer" 
+                      onClick={()=> handleDeleteGrupo(grupo.id)}
+                    />
                   </div>
                 </td>
               </tr>
@@ -420,7 +437,10 @@ const handleRemoveTecnico = async (tecnicoId: number) => {
                       <ClipboardPen className="h-5 w-5 text-blue-500" />
                     </button>
                     <button className="p-1 border-2 border-gray-200 rounded-sm">
-                      <Trash2 className="h-5 w-5 text-red-500" />
+                      <Trash2 
+                        className="h-5 w-5 text-red-500" 
+                        onClick={()=> handleDeleteGrupo(grupo.id)}
+                      />
                     </button>
                   </div>
                 </div>
