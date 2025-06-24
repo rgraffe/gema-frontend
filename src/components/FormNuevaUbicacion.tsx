@@ -8,6 +8,7 @@ import {
   getUbicacionesTecnicas,
 } from "@/services/ubicacionesTecnicas";
 import { PlusCircle, Trash } from "lucide-react";
+import { toast } from "sonner";
 
 // Definición del payload
 type CreateUbicacionTecnicaPayload = {
@@ -93,10 +94,24 @@ const FormNuevaUbicacion: React.FC<Props> = ({
     mutationFn: createUbicacionTecnica,
     onSuccess: (_data: any) => {
       queryClient.invalidateQueries({ queryKey: ["ubicacionesTecnicas"] });
+      toast.success("Ubicación técnica creada correctamente");
+      setFormValues({
+        modulo: "",
+        planta: "",
+        espacio: "",
+        tipo: "",
+        subtipo: "",
+        numero: "",
+        pieza: "",
+        descripcion: "",
+      });
       onClose();
     },
     onError: (err: unknown) => {
       console.error("Error al crear la ubicación técnica:", err);
+      toast.success(
+        "Error al crear la ubicación técnica, por favor intente de nuevo."
+      );
     },
   });
 
