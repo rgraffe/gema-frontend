@@ -77,7 +77,8 @@ const GruposTrabajo: React.FC = () => {
           map[item.grupoDeTrabajoId] = item.usuarios;
         });
         setTrabajadoresPorGrupo(map);
-
+        console.log("map: ")
+        console.log(map)
         console.log(trabajadoresResp)
       } catch (error: any) {
         setError(error.message);
@@ -293,10 +294,10 @@ const GruposTrabajo: React.FC = () => {
               <div className="border rounded-lg divide-y">
                 {trabajadoresPorGrupo[selectedGrupoId]?.length ? (
                   trabajadoresPorGrupo[selectedGrupoId].map(tecnico => (
-                    <div key={tecnico.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                    <div key={tecnico.Id} className="p-4 flex justify-between items-center hover:bg-gray-50">
                       <div>
-                        <p className="font-medium">{tecnico.nombre}</p>
-                        <p className="text-sm text-gray-600">{tecnico.puesto}</p>
+                        <p className="font-medium">{tecnico.Nombre}</p>
+                        <p className="text-sm text-gray-600">{tecnico.Correo}</p>
                       </div>
                       <Button
                         variant="ghost"
