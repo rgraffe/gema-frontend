@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { UserCheck, ClipboardPen, Trash2, CirclePlus, UserPlus, UserMinus } from "lucide-react";
 import {
   createGrupoDeTrabajo,
+  getAllWorkersInALLGroups,
   getGruposDeTrabajo,
 } from "@/services/gruposDeTrabajo";
 import { Button } from "./ui/button";
@@ -26,6 +27,8 @@ interface Tecnico {
 }
 
 const GruposTrabajo: React.FC = () => {
+    const [trabajadoresPorGrupo, setTrabajadoresPorGrupo] = useState<Record<number, any[]>>({});
+  
   const [grupos, setGrupos] = useState<GrupoTrabajo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +52,7 @@ const GruposTrabajo: React.FC = () => {
   ];
 
   // Mock de técnicos asignados por grupo
+  /*
   const tecnicosAsignados: Record<number, Tecnico[]> = {
     1: [
       { id: 1, nombre: "Juan Pérez", puesto: "Técnico Senior" },
@@ -57,14 +61,24 @@ const GruposTrabajo: React.FC = () => {
     2: [
       { id: 3, nombre: "Carlos López", puesto: "Electricista" }
     ]
-  };
+  };*/
 
    useEffect(() => {
     const fetchGrupos = async () => {
       try {
         const response = await getGruposDeTrabajo();
         setGrupos(response.data);
-        console.log("gurpos", response.data);
+        
+        // Obtener los trabajadores por grupo 
+        const trabajadoresResp = await getAllWorkersInALLGroups();
+        // Mapear la respuesta a un objeto { grupoId: usuarios[] }
+        const map: Record<number, any[]> = {};
+        trabajadoresResp.data.forEach((item: any) => {
+          map[item.grupoDeTrabajoId] = item.usuarios;
+        });
+        setTrabajadoresPorGrupo(map);
+
+        console.log(trabajadoresResp)
       } catch (error: any) {
         setError(error.message);
       } finally {
@@ -81,39 +95,6 @@ const GruposTrabajo: React.FC = () => {
     { id: 4, nombre: "Laura Mendoza" },
     { id: 7, nombre: "Sebastián Gomes" },
   ];
-  /*
-  const grupos: GrupoTrabajo[] = [
-    {
-      codigo: "SGMREF",
-      nombre: "Grupo de Mantenimiento de Refrigeración",
-      supervisor: "Carlos Rodríguez",
-      miembros: "8 Técnicos",
-    },
-    {
-      codigo: "SGMELE",
-      nombre: "Grupo de Mantenimiento Eléctrico",
-      supervisor: "Ana Garcia",
-      miembros: "6 Técnicos",
-    },
-    {
-      codigo: "SGMINF",
-      nombre: "Grupo de Mantenimiento de Infraestructura",
-      supervisor: "Miguel Torres",
-      miembros: "10 Técnicos",
-    },
-    {
-      codigo: "SGMLOG",
-      nombre: "Grupo de Mantenimiento de Logística",
-      supervisor: "Laura Mendoza",
-      miembros: "5 Técnicos",
-    },
-    {
-      codigo: "SGMMEC",
-      nombre: "Grupo de Mantenimiento Mecánico",
-      supervisor: "Sebastián Gomes",
-      miembros: "5 Técnicos",
-    },
-  ]*/
 
 
   const handleInputChange = (
@@ -310,8 +291,8 @@ const GruposTrabajo: React.FC = () => {
               
               {/* Lista de técnicos */}
               <div className="border rounded-lg divide-y">
-                {tecnicosAsignados[selectedGrupoId]?.length ? (
-                  tecnicosAsignados[selectedGrupoId].map(tecnico => (
+                {trabajadoresPorGrupo[selectedGrupoId]?.length ? (
+                  trabajadoresPorGrupo[selectedGrupoId].map(tecnico => (
                     <div key={tecnico.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
                       <div>
                         <p className="font-medium">{tecnico.nombre}</p>
@@ -378,7 +359,7 @@ const GruposTrabajo: React.FC = () => {
                   onClick={() => openTecnicosModal(grupo.id)}
                 >
                   <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-200 font-medium hover:bg-gray-300 transition">
-                    {tecnicosAsignados[grupo.id]?.length || 0}
+                    {trabajadoresPorGrupo[grupo.id]?.length || 0}
                   </div>
                 </td>
                 <td className="flex items-center justify-evenly gap-2 px-6 py-4 whitespace-nowrap text-sm">
@@ -429,7 +410,7 @@ const GruposTrabajo: React.FC = () => {
                   className="border-2 border-gray-300 rounded-lg bg-gray-200 font-medium px-3 py-1 inline-block text-sm cursor-pointer hover:bg-gray-300"
                   onClick={() => openTecnicosModal(grupo.id)}
                 >
-                  {tecnicosAsignados[grupo.id]?.length || 0} Técnicos
+                  {trabajadoresPorGrupo[grupo.id]?.length || 0} Técnicos
                 </div>
               </div>
             </div>
