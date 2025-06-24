@@ -16,16 +16,7 @@ interface GrupoTrabajo {
   supervisorId: number | null;
 }
 
-interface Supervisor {
-  id: number;
-  nombre: string;
-}
 
-interface Tecnico {
-  id: number;
-  nombre: string;
-  puesto: string;
-}
 
 const GruposTrabajo: React.FC = () => {
   const [trabajadoresPorGrupo, setTrabajadoresPorGrupo] = useState<Record<number, any[]>>({});
@@ -42,30 +33,6 @@ const GruposTrabajo: React.FC = () => {
     supervisorId: 0,
   });
   const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState<number>(0);
-
-  // Mock de técnicos disponibles (simulando una base de datos)
-  /*
-
-  const tecnicosDisponibles: Tecnico[] = [
-    { id: 1, nombre: "Juan Pérez", puesto: "Técnico Senior" },
-    { id: 2, nombre: "María García", puesto: "Técnico Junior" },
-    { id: 3, nombre: "Carlos López", puesto: "Electricista" },
-    { id: 4, nombre: "Ana Martínez", puesto: "Mecánico" },
-    { id: 5, nombre: "Luis Fernández", puesto: "Refrigeración" }
-  ];
-   */
-
-  // Mock de técnicos asignados por grupo
-  /*
-  const tecnicosAsignados: Record<number, Tecnico[]> = {
-    1: [
-      { id: 1, nombre: "Juan Pérez", puesto: "Técnico Senior" },
-      { id: 2, nombre: "María García", puesto: "Técnico Junior" }
-    ],
-    2: [
-      { id: 3, nombre: "Carlos López", puesto: "Electricista" }
-    ]
-  };*/
 
    useEffect(() => {
     const fetchGrupos = async () => {
@@ -95,15 +62,6 @@ const GruposTrabajo: React.FC = () => {
     };
     fetchGrupos();
   }, []);
-/*
-  const supervisores: Supervisor[] = [
-    { id: 1, nombre: "Carlos Rodríguez" },
-    { id: 2, nombre: "Ana Garcia" },
-    { id: 3, nombre: "Miguel Torres" },
-    { id: 4, nombre: "Laura Mendoza" },
-    { id: 7, nombre: "Sebastián Gomes" },
-  ];
-*/
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
