@@ -7,6 +7,7 @@ import { ComboSelectInput } from "./ui/ComboSelectInput";
 import {
   createUbicacionTecnica,
   getUbicacionesTecnicas,
+  getUbicacionesDependientes,
 } from "@/services/ubicacionesTecnicas";
 import { PlusCircle, Trash } from "lucide-react";
 import { toast } from "sonner";
@@ -55,7 +56,65 @@ const FormNuevaUbicacion: React.FC<Props> = ({
     queryFn: getUbicacionesTecnicas,
   });
 
-  // ... (closeModal, handleChange, generarCodigo, getAbreviacion no cambian)
+  // --- Consultas para niveles dependientes ---
+
+  // Nivel 1: módulo ya viene desde la consulta inicial
+  const selectedNivel1 = ubicacionesData?.data?.find(
+    (u: any) => u.abreviacion === formValues.modulo
+  );
+  const { data: dependientesNivel2, isLoading: loadingNivel2 } = useQuery({
+    queryKey: ["ubicacionesDependientes", selectedNivel1?.idUbicacion, 2],
+    queryFn: () => getUbicacionesDependientes(selectedNivel1!.idUbicacion, 2),
+    enabled: !!selectedNivel1,
+  });
+
+  const selectedNivel2 = dependientesNivel2?.data?.find(
+    (u: any) => u.abreviacion === formValues.planta
+  );
+  const { data: dependientesNivel3, isLoading: loadingNivel3 } = useQuery({
+    queryKey: ["ubicacionesDependientes", selectedNivel2?.idUbicacion, 3],
+    queryFn: () => getUbicacionesDependientes(selectedNivel2!.idUbicacion, 3),
+    enabled: !!selectedNivel2,
+  });
+
+  const selectedNivel3 = dependientesNivel3?.data?.find(
+    (u: any) => u.abreviacion === formValues.espacio
+  );
+  const { data: dependientesNivel4, isLoading: loadingNivel4 } = useQuery({
+    queryKey: ["ubicacionesDependientes", selectedNivel3?.idUbicacion, 4],
+    queryFn: () => getUbicacionesDependientes(selectedNivel3!.idUbicacion, 4),
+    enabled: !!selectedNivel3,
+  });
+
+  const selectedNivel4 = dependientesNivel4?.data?.find(
+    (u: any) => u.abreviacion === formValues.tipo
+  );
+  const { data: dependientesNivel5, isLoading: loadingNivel5 } = useQuery({
+    queryKey: ["ubicacionesDependientes", selectedNivel4?.idUbicacion, 5],
+    queryFn: () => getUbicacionesDependientes(selectedNivel4!.idUbicacion, 5),
+    enabled: !!selectedNivel4,
+  });
+
+  const selectedNivel5 = dependientesNivel5?.data?.find(
+    (u: any) => u.abreviacion === formValues.subtipo
+  );
+  const { data: dependientesNivel6, isLoading: loadingNivel6 } = useQuery({
+    queryKey: ["ubicacionesDependientes", selectedNivel5?.idUbicacion, 6],
+    queryFn: () => getUbicacionesDependientes(selectedNivel5!.idUbicacion, 6),
+    enabled: !!selectedNivel5,
+  });
+
+  const selectedNivel6 = dependientesNivel6?.data?.find(
+    (u: any) => u.abreviacion === formValues.numero
+  );
+  const { data: dependientesNivel7, isLoading: loadingNivel7 } = useQuery({
+    queryKey: ["ubicacionesDependientes", selectedNivel6?.idUbicacion, 7],
+    queryFn: () => getUbicacionesDependientes(selectedNivel6!.idUbicacion, 7),
+    enabled: !!selectedNivel6,
+  });
+
+  // --- Fin de consultas dependientes ---
+
   const closeModal = () => {
     setDisplayedLevels(1);
     onClose();
@@ -90,7 +149,6 @@ const FormNuevaUbicacion: React.FC<Props> = ({
     }
     return "";
   };
-
 
   const { mutate, status, isError, error } = useMutation<
     any,
@@ -151,13 +209,13 @@ const FormNuevaUbicacion: React.FC<Props> = ({
               <Label className="text-sm">
                 Nivel 1 <span className="text-red-500">*</span>
               </Label>
-              {/* 3. El ComboSelectInput usa los datos de useQuery para sus opciones. */}
+              {/* El ComboSelectInput usa los datos de useQuery para sus opciones */}
               <ComboSelectInput
                 name="modulo"
                 placeholder={isLoading ? "Cargando..." : "Ejemplo: M2"}
                 value={formValues.modulo}
                 onChange={(value) =>
-                  setFormValues((prev) => ({ ...prev, modulo: value }))
+                  setFormValues((prev) => ({ ...prev, modulo: value, planta: "", espacio: "", tipo: "", subtipo: "", numero: "", pieza: "" }))
                 }
                 options={
                   ubicacionesData?.data
@@ -171,18 +229,26 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 className="w-full border rounded p-2"
               />
             </div>
-            {/* ... resto de los niveles ... */}
             {displayedLevels >= 2 && (
               <div>
                 <Label className="text-sm">Nivel 2</Label>
                 <ComboSelectInput
                   name="planta"
-                  placeholder="Ejemplo: P01"
+                  placeholder={
+                    loadingNivel2 ? "Cargando..." : "Ejemplo: P01"
+                  }
                   value={formValues.planta}
                   onChange={(value) =>
-                    setFormValues((prev) => ({ ...prev, planta: value }))
+                    setFormValues((prev) => ({ ...prev, planta: value, espacio: "", tipo: "", subtipo: "", numero: "", pieza: "" }))
                   }
-                  options={[]}
+                  options={
+                    dependientesNivel2?.data
+                      ?.map((u: any) => ({
+                        value: u.abreviacion,
+                        label: `${u.abreviacion} - ${u.descripcion}`,
+                      })) || []
+                  }
+                  disabled={loadingNivel2}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -192,12 +258,21 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 <Label className="text-sm">Nivel 3</Label>
                 <ComboSelectInput
                   name="espacio"
-                  placeholder="Ejemplo: A2-14, LABBD"
+                  placeholder={
+                    loadingNivel3 ? "Cargando..." : "Ejemplo: A2-14, LABBD"
+                  }
                   value={formValues.espacio}
                   onChange={(value) =>
-                    setFormValues((prev) => ({ ...prev, espacio: value }))
+                    setFormValues((prev) => ({ ...prev, espacio: value, tipo: "", subtipo: "", numero: "", pieza: "" }))
                   }
-                  options={[]}
+                  options={
+                    dependientesNivel3?.data
+                      ?.map((u: any) => ({
+                        value: u.abreviacion,
+                        label: `${u.abreviacion} - ${u.descripcion}`,
+                      })) || []
+                  }
+                  disabled={loadingNivel3}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -207,12 +282,21 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 <Label className="text-sm">Nivel 4</Label>
                 <ComboSelectInput
                   name="tipo"
-                  placeholder="Ejemplo: HVAC"
+                  placeholder={
+                    loadingNivel4 ? "Cargando..." : "Ejemplo: HVAC"
+                  }
                   value={formValues.tipo}
                   onChange={(value) =>
-                    setFormValues((prev) => ({ ...prev, tipo: value }))
+                    setFormValues((prev) => ({ ...prev, tipo: value, subtipo: "", numero: "", pieza: "" }))
                   }
-                  options={[]}
+                  options={
+                    dependientesNivel4?.data
+                      ?.map((u: any) => ({
+                        value: u.abreviacion,
+                        label: `${u.abreviacion} - ${u.descripcion}`,
+                      })) || []
+                  }
+                  disabled={loadingNivel4}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -222,12 +306,21 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 <Label className="text-sm">Nivel 5</Label>
                 <ComboSelectInput
                   name="subtipo"
-                  placeholder="Ejemplo: SPLIT, CENT"
+                  placeholder={
+                    loadingNivel5 ? "Cargando..." : "Ejemplo: SPLIT, CENT"
+                  }
                   value={formValues.subtipo}
                   onChange={(value) =>
-                    setFormValues((prev) => ({ ...prev, subtipo: value }))
+                    setFormValues((prev) => ({ ...prev, subtipo: value, numero: "", pieza: "" }))
                   }
-                  options={[]}
+                  options={
+                    dependientesNivel5?.data
+                      ?.map((u: any) => ({
+                        value: u.abreviacion,
+                        label: `${u.abreviacion} - ${u.descripcion}`,
+                      })) || []
+                  }
+                  disabled={loadingNivel5}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -237,12 +330,21 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 <Label className="text-sm">Nivel 6</Label>
                 <ComboSelectInput
                   name="numero"
-                  placeholder="Ejemplo: 01"
+                  placeholder={
+                    loadingNivel6 ? "Cargando..." : "Ejemplo: 01"
+                  }
                   value={formValues.numero}
                   onChange={(value) =>
-                    setFormValues((prev) => ({ ...prev, numero: value }))
+                    setFormValues((prev) => ({ ...prev, numero: value, pieza: "" }))
                   }
-                  options={[]}
+                  options={
+                    dependientesNivel6?.data
+                      ?.map((u: any) => ({
+                        value: u.abreviacion,
+                        label: `${u.abreviacion} - ${u.descripcion}`,
+                      })) || []
+                  }
+                  disabled={loadingNivel6}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -252,12 +354,21 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 <Label className="text-sm">Nivel 7</Label>
                 <ComboSelectInput
                   name="pieza"
-                  placeholder="Ejemplo: COMP, EVAP"
+                  placeholder={
+                    loadingNivel7 ? "Cargando..." : "Ejemplo: COMP, EVAP"
+                  }
                   value={formValues.pieza}
                   onChange={(value) =>
                     setFormValues((prev) => ({ ...prev, pieza: value }))
                   }
-                  options={[]}
+                  options={
+                    dependientesNivel7?.data
+                      ?.map((u: any) => ({
+                        value: u.abreviacion,
+                        label: `${u.abreviacion} - ${u.descripcion}`,
+                      })) || []
+                  }
+                  disabled={loadingNivel7}
                   className="w-full border rounded p-2"
                 />
               </div>
