@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Input } from "./input";
 import { cn } from "@/lib/utils";
 
@@ -70,7 +70,11 @@ const ComboSelectInput: React.FC<ComboSelectInputProps> = ({
               aria-label="Abrir opciones"
               onClick={() => setOpen((prev) => !prev)}
             >
-              <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
+              {open ? (
+                <ChevronUpIcon className="size-4 shrink-0 opacity-50" />
+              ) : (
+                <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
+              )}
             </button>
           </Popover.Trigger>
         </div>
