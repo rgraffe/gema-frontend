@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Input } from "./input";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,7 @@ const ComboSelectInput: React.FC<ComboSelectInputProps> = ({
     if (anchorRef.current) {
       setAnchorWidth(anchorRef.current.offsetWidth);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchorRef.current]);
 
   // Filtramos las opciones según lo que se escribe en el Input.
