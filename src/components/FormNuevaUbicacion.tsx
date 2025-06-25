@@ -1,8 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
+import { ComboSelectInput } from "./ui/ComboSelectInput";
 import {
   createUbicacionTecnica,
   getUbicacionesTecnicas,
@@ -10,7 +11,8 @@ import {
 import { PlusCircle, Trash } from "lucide-react";
 import { toast } from "sonner";
 
-// Definición del payload
+// ... (los tipos de datos no cambian)
+
 type CreateUbicacionTecnicaPayload = {
   descripcion: string;
   abreviacion: string;
@@ -45,6 +47,15 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   displayedLevels,
   setDisplayedLevels,
 }) => {
+  const queryClient = useQueryClient();
+
+  // 1. useQuery es la ÚNICA fuente de datos. Se encarga de llamar a getUbicacionesTecnicas una vez.
+  const { data: ubicacionesData, isLoading } = useQuery({
+    queryKey: ["ubicacionesTecnicas"],
+    queryFn: getUbicacionesTecnicas,
+  });
+
+  // ... (closeModal, handleChange, generarCodigo, getAbreviacion no cambian)
   const closeModal = () => {
     setDisplayedLevels(1);
     onClose();
@@ -56,12 +67,10 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   };
 
   const generarCodigo = () => {
-    const { modulo, planta, espacio, tipo, subtipo, numero, pieza } =
-      formValues;
+    const { modulo, planta, espacio, tipo, subtipo, numero, pieza } = formValues;
     const niveles = [modulo, planta, espacio, tipo, subtipo, numero, pieza];
     const resultado: string[] = [];
     for (let i = 0; i < niveles.length; i++) {
-      // Si el campo está vacío, detenemos la inclusión de niveles
       if (!niveles[i].trim()) {
         break;
       }
@@ -71,11 +80,9 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   };
 
   const getAbreviacion = () => {
-    // Se asume que los niveles anteriores son obligatorios (por lo que no habrán saltos, excepto en los últimos niveles)
     const { modulo, planta, espacio, tipo, subtipo, numero, pieza } =
       formValues;
     const levels = [modulo, planta, espacio, tipo, subtipo, numero, pieza];
-    // Recorremos desde el último hasta el primero
     for (let i = levels.length - 1; i >= 0; i--) {
       if (levels[i].trim() !== "") {
         return levels[i];
@@ -84,7 +91,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
     return "";
   };
 
-  const queryClient = useQueryClient();
+
   const { mutate, status, isError, error } = useMutation<
     any,
     unknown,
@@ -95,63 +102,40 @@ const FormNuevaUbicacion: React.FC<Props> = ({
     onSuccess: (_data: any) => {
       queryClient.invalidateQueries({ queryKey: ["ubicacionesTecnicas"] });
       toast.success("Ubicación técnica creada correctamente");
-      setFormValues({
-        modulo: "",
-        planta: "",
-        espacio: "",
-        tipo: "",
-        subtipo: "",
-        numero: "",
-        pieza: "",
-        descripcion: "",
-      });
       onClose();
     },
     onError: (err: unknown) => {
       console.error("Error al crear la ubicación técnica:", err);
-      toast.success(
-        "Error al crear la ubicación técnica, por favor intente de nuevo."
-      );
+      toast.error("Error al crear la ubicación técnica, por favor intente de nuevo.");
     },
   });
 
-  const onSubmit = async () => {
-    try {
-      // 1. Obtenemos todas las ubicaciones técnicas existentes.
-      const respuesta = await getUbicacionesTecnicas();
-      const ubicacionesTecnicasExistentes = respuesta.data; // Extraemos el arreglo de ubicaciones
-      console.log(
-        "Ubicaciones técnicas existentes:",
-        ubicacionesTecnicasExistentes
-      );
-
-      // 2. Generamos el código completo ingresado por el usuario.
-      const codigoCompleto = generarCodigo(); // Ej: "M2-PB" o "M2-P01-A101", según lo ingresado
-      // Separamos por guiones y quitamos el último nivel:
-      const partes = codigoCompleto.split("-");
-      const codigoSinUltimoNivel = partes.slice(0, -1).join("-");
-
-      // Imprimimos el código sin el último nivel (con guiones)
-      console.log("Código sin último nivel:", codigoSinUltimoNivel);
-
-      // 3. Buscamos en el listado la ubicación cuya propiedad "codigo_Identificacion" coincida con el código sin el último nivel
-      const padreEncontrado = ubicacionesTecnicasExistentes.find(
-        (u: any) => u.codigo_Identificacion === codigoSinUltimoNivel
-      );
-
-      // 4. Construimos el payload. Si se encontró el padre, se usa su id.
-      const payload: CreateUbicacionTecnicaPayload = {
-        descripcion: formValues.descripcion,
-        abreviacion: getAbreviacion(), // Último nivel ingresado
-        padres: padreEncontrado
-          ? [{ idPadre: padreEncontrado.idUbicacion, esUbicacionFisica: false }]
-          : [],
-      };
-
-      mutate(payload);
-    } catch (error) {
-      console.error("Error obteniendo ubicaciones técnicas:", error);
+  // 2. onSubmit ya no es async y usa los datos cacheados de useQuery.
+  const onSubmit = () => {
+    if (!ubicacionesData || !ubicacionesData.data) {
+      toast.error("Los datos de ubicaciones aún no se han cargado.");
+      return;
     }
+
+    const ubicacionesTecnicasExistentes = ubicacionesData.data;
+
+    const codigoCompleto = generarCodigo();
+    const partes = codigoCompleto.split("-");
+    const codigoSinUltimoNivel = partes.slice(0, -1).join("-");
+
+    const padreEncontrado = ubicacionesTecnicasExistentes.find(
+      (u: any) => u.codigo_Identificacion === codigoSinUltimoNivel
+    );
+
+    const payload: CreateUbicacionTecnicaPayload = {
+      descripcion: formValues.descripcion,
+      abreviacion: getAbreviacion(),
+      padres: padreEncontrado
+        ? [{ idPadre: padreEncontrado.idUbicacion, esUbicacionFisica: false }]
+        : [],
+    };
+
+    mutate(payload);
   };
 
   return (
@@ -167,22 +151,38 @@ const FormNuevaUbicacion: React.FC<Props> = ({
               <Label className="text-sm">
                 Nivel 1 <span className="text-red-500">*</span>
               </Label>
-              <Input
+              {/* 3. El ComboSelectInput usa los datos de useQuery para sus opciones. */}
+              <ComboSelectInput
                 name="modulo"
-                placeholder="Ejemplo: M2"
+                placeholder={isLoading ? "Cargando..." : "Ejemplo: M2"}
                 value={formValues.modulo}
-                onChange={handleChange}
+                onChange={(value) =>
+                  setFormValues((prev) => ({ ...prev, modulo: value }))
+                }
+                options={
+                  ubicacionesData?.data
+                    ?.filter((u: any) => u.nivel === 1)
+                    .map((u: any) => ({
+                      value: u.abreviacion,
+                      label: `${u.abreviacion} - ${u.descripcion}`,
+                    })) || []
+                }
+                disabled={isLoading}
                 className="w-full border rounded p-2"
               />
             </div>
+            {/* ... resto de los niveles ... */}
             {displayedLevels >= 2 && (
               <div>
                 <Label className="text-sm">Nivel 2</Label>
-                <Input
+                <ComboSelectInput
                   name="planta"
                   placeholder="Ejemplo: P01"
                   value={formValues.planta}
-                  onChange={handleChange}
+                  onChange={(value) =>
+                    setFormValues((prev) => ({ ...prev, planta: value }))
+                  }
+                  options={[]}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -190,11 +190,14 @@ const FormNuevaUbicacion: React.FC<Props> = ({
             {displayedLevels >= 3 && (
               <div>
                 <Label className="text-sm">Nivel 3</Label>
-                <Input
+                <ComboSelectInput
                   name="espacio"
                   placeholder="Ejemplo: A2-14, LABBD"
                   value={formValues.espacio}
-                  onChange={handleChange}
+                  onChange={(value) =>
+                    setFormValues((prev) => ({ ...prev, espacio: value }))
+                  }
+                  options={[]}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -202,11 +205,14 @@ const FormNuevaUbicacion: React.FC<Props> = ({
             {displayedLevels >= 4 && (
               <div>
                 <Label className="text-sm">Nivel 4</Label>
-                <Input
+                <ComboSelectInput
                   name="tipo"
                   placeholder="Ejemplo: HVAC"
                   value={formValues.tipo}
-                  onChange={handleChange}
+                  onChange={(value) =>
+                    setFormValues((prev) => ({ ...prev, tipo: value }))
+                  }
+                  options={[]}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -214,11 +220,14 @@ const FormNuevaUbicacion: React.FC<Props> = ({
             {displayedLevels >= 5 && (
               <div>
                 <Label className="text-sm">Nivel 5</Label>
-                <Input
+                <ComboSelectInput
                   name="subtipo"
                   placeholder="Ejemplo: SPLIT, CENT"
                   value={formValues.subtipo}
-                  onChange={handleChange}
+                  onChange={(value) =>
+                    setFormValues((prev) => ({ ...prev, subtipo: value }))
+                  }
+                  options={[]}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -226,11 +235,14 @@ const FormNuevaUbicacion: React.FC<Props> = ({
             {displayedLevels >= 6 && (
               <div>
                 <Label className="text-sm">Nivel 6</Label>
-                <Input
+                <ComboSelectInput
                   name="numero"
                   placeholder="Ejemplo: 01"
                   value={formValues.numero}
-                  onChange={handleChange}
+                  onChange={(value) =>
+                    setFormValues((prev) => ({ ...prev, numero: value }))
+                  }
+                  options={[]}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -238,11 +250,14 @@ const FormNuevaUbicacion: React.FC<Props> = ({
             {displayedLevels >= 7 && (
               <div>
                 <Label className="text-sm">Nivel 7</Label>
-                <Input
+                <ComboSelectInput
                   name="pieza"
                   placeholder="Ejemplo: COMP, EVAP"
                   value={formValues.pieza}
-                  onChange={handleChange}
+                  onChange={(value) =>
+                    setFormValues((prev) => ({ ...prev, pieza: value }))
+                  }
+                  options={[]}
                   className="w-full border rounded p-2"
                 />
               </div>
@@ -254,7 +269,6 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                   variant="outline"
                   onClick={() => {
                     setDisplayedLevels((prev) => Math.max(prev - 1, 1));
-                    // Limpiar el último nivel al eliminarlo
                     setFormValues((prev) => {
                       const newValues = { ...prev };
                       switch (displayedLevels) {
@@ -335,7 +349,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
           <Button
             className="bg-gema-green hover:bg-green-700 text-white px-8"
             onClick={onSubmit}
-            disabled={status === "pending"}
+            disabled={status === "pending" || isLoading}
           >
             {status === "pending" ? "Creando..." : "Crear Ubicación"}
           </Button>
