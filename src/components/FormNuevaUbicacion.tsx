@@ -154,7 +154,6 @@ const FormNuevaUbicacion: React.FC<Props> = ({
     return "";
   };
 
-  const queryClient = useQueryClient();
   const { mutate, status, isError, error } = useMutation({
     mutationFn: createUbicacionTecnica,
     onSuccess: (data: {
