@@ -1,8 +1,4 @@
-/**
- * Servicio para manejar las operaciones de Ubicaciones Técnicas.
- * Realiza peticiones fetch a los endpoints del backend para gestionar las ubicaciones técnicas.
- * @author janbertorelli
- */
+import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
 
 /**
  * Obtiene todas las ubicaciones técnicas.
@@ -22,7 +18,8 @@ export async function getUbicacionesTecnicas() {
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(
-      data.error || "Error al obtener las ubicaciones técnicas, por favor intente de nuevo."
+      data.error ||
+        "Error al obtener las ubicaciones técnicas, por favor intente de nuevo."
     );
   }
   return resp.json();
@@ -52,7 +49,8 @@ export async function getUbicacionesDependientes(id: number, nivel?: number) {
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(
-      data.error || "Error al obtener ubicaciones dependientes, por favor intente de nuevo."
+      data.error ||
+        "Error al obtener ubicaciones dependientes, por favor intente de nuevo."
     );
   }
   return resp.json();
@@ -74,14 +72,24 @@ export async function createUbicacionTecnica(params: {
 }) {
   // Validamos parámetros y listamos los que faltan o son inválidos.
   const missingParams: string[] = [];
-  if (typeof params.descripcion !== 'string' || params.descripcion.trim() === '') {
+  if (
+    typeof params.descripcion !== "string" ||
+    params.descripcion.trim() === ""
+  ) {
     missingParams.push("descripcion (debe ser una cadena no vacía)");
   }
-  if (typeof params.abreviacion !== 'string' || params.abreviacion.trim() === '') {
+  if (
+    typeof params.abreviacion !== "string" ||
+    params.abreviacion.trim() === ""
+  ) {
     missingParams.push("abreviacion (debe ser una cadena no vacía)");
   }
   if (missingParams.length > 0) {
-    throw new Error(`Faltan o son inválidos los siguientes parámetros: ${missingParams.join(', ')}.`);
+    throw new Error(
+      `Faltan o son inválidos los siguientes parámetros: ${missingParams.join(
+        ", "
+      )}.`
+    );
   }
 
   try {
@@ -91,14 +99,17 @@ export async function createUbicacionTecnica(params: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
     });
-    
+
     if (!resp.ok) {
       const data = await resp.json();
-      throw new Error(data.error || "Error al crear la ubicación técnica, por favor intente de nuevo.");
+      throw new Error(
+        data.error ||
+          "Error al crear la ubicación técnica, por favor intente de nuevo."
+      );
     }
     return resp.json();
   } catch (error) {
@@ -125,22 +136,34 @@ export async function updateUbicacionTecnica(
   }
 ) {
   // Validar el id
-  if (typeof id !== 'number' || isNaN(id) || id <= 0) {
+  if (typeof id !== "number" || isNaN(id) || id <= 0) {
     throw new Error("El parámetro 'id' debe ser un número positivo válido.");
   }
   // Verificamos que al menos se haya proporcionado un parámetro de actualización válido.
   const providedFields: string[] = [];
-  if (typeof params.descripcion === 'string' && params.descripcion.trim() !== '') {
+  if (
+    typeof params.descripcion === "string" &&
+    params.descripcion.trim() !== ""
+  ) {
     providedFields.push("descripcion");
   }
-  if (typeof params.abreviacion === 'string' && params.abreviacion.trim() !== '') {
+  if (
+    typeof params.abreviacion === "string" &&
+    params.abreviacion.trim() !== ""
+  ) {
     providedFields.push("abreviacion");
   }
-  if (params.padres && Array.isArray(params.padres) && params.padres.length > 0) {
+  if (
+    params.padres &&
+    Array.isArray(params.padres) &&
+    params.padres.length > 0
+  ) {
     providedFields.push("padres");
   }
   if (providedFields.length === 0) {
-    throw new Error("Debe proporcionar al menos uno de los siguientes parámetros válidos para actualizar: descripcion, abreviacion o padres.");
+    throw new Error(
+      "Debe proporcionar al menos uno de los siguientes parámetros válidos para actualizar: descripcion, abreviacion o padres."
+    );
   }
 
   try {
@@ -150,14 +173,17 @@ export async function updateUbicacionTecnica(
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
     });
-    
+
     if (!resp.ok) {
       const data = await resp.json();
-      throw new Error(data.error || "Error al actualizar la ubicación técnica, por favor intente de nuevo.");
+      throw new Error(
+        data.error ||
+          "Error al actualizar la ubicación técnica, por favor intente de nuevo."
+      );
     }
     return resp.json();
   } catch (error) {
@@ -184,8 +210,30 @@ export async function deleteUbicacionTecnica(id: number) {
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(
-      data.error || "Error al eliminar la ubicación técnica, por favor intente de nuevo."
+      data.error ||
+        "Error al eliminar la ubicación técnica, por favor intente de nuevo."
     );
   }
   return resp.json();
+}
+
+/**
+ * Obtiene las ubicaciones técnicas de un nivel específico.
+ * @author gabrielm
+ * @param nivel
+ */
+export async function getUbicacionesPorNivel(nivel: number) {
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+  const token = localStorage.getItem("authToken");
+  const resp = await fetch(`${BASE_URL}/ubicaciones-tecnicas/nivel/${nivel}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(data.error || "Error al obtener ubicaciones por nivel");
+  }
+  return resp.json() as Promise<{ data: UbicacionTecnica[] }>;
 }

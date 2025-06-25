@@ -6,6 +6,7 @@ import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
 import { Button } from "@/components/ui/button";
 import {
   deleteUbicacionTecnica,
+  getUbicacionesDependientes,
   getUbicacionesTecnicas,
 } from "@/services/ubicacionesTecnicas";
 import {
@@ -20,6 +21,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
+import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
 
 interface DetalleUbicacion {
   idUbicacion: number;
@@ -48,6 +50,14 @@ const UbicacionesTecnicas: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [borrarUbicacion, setBorrarUbicacion] =
     useState<DetalleUbicacion | null>(null);
+
+  // Dependencias de la ubicación a eliminar
+  const dependencias = useQuery({
+    queryFn: () =>
+      getUbicacionesDependientes(borrarUbicacion?.idUbicacion || 0),
+    queryKey: ["ubicacionesDependientes", borrarUbicacion?.idUbicacion],
+    enabled: !!borrarUbicacion,
+  });
 
   // Estado para crear ubicación
   const [formValues, setFormValues] = useState({
@@ -176,9 +186,6 @@ const UbicacionesTecnicas: React.FC = () => {
             <h2 className="font-semibold text-lg text-center mb-3">
               ¿Seguro que desea eliminar esta ubicación técnica?
             </h2>
-            <p className="text-center text-neutral-700">
-              Esto eliminará la ubicación, y todas las relacionadas
-            </p>
             <ul className="mt-3 list-disc px-3 space-y-2">
               <li className="text-neutral-700 text-sm">
                 <b>Nombre de la ubicación:</b> {borrarUbicacion?.descripcion}
@@ -187,6 +194,27 @@ const UbicacionesTecnicas: React.FC = () => {
                 <b>Código de identificación:</b> {borrarUbicacion?.codigo}
               </li>
             </ul>
+            <p className="text-neutral-700 text-sm pt-4">
+              Esto eliminará la ubicación, y todas las listadas a continuación:
+            </p>
+            {dependencias.isLoading ? (
+              <LoaderCircle className="animate-spin mx-auto mt-3" />
+            ) : dependencias.data?.data.length ? (
+              <ul className="mt-3 list-disc px-3 space-y-2">
+                {dependencias.data.data.map((dep: UbicacionTecnica) => (
+                  <li
+                    key={dep.idUbicacion}
+                    className="text-neutral-700 text-sm"
+                  >
+                    {dep.descripcion} ({dep.codigo_Identificacion})
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-center text-sm text-neutral-700 mt-3">
+                No hay ubicaciones dependientes.
+              </p>
+            )}
             <div className="flex justify-end gap-2 mt-2">
               <Button
                 variant="outline"
