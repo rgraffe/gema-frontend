@@ -59,7 +59,6 @@ const ComboSelectInput: React.FC<ComboSelectInputProps> = ({
             value={value}
             onChange={(e) => {
               onChange(e.target.value);
-              setOpen(true);
             }}
             placeholder={placeholder}
             className="h-full flex-1 border-none bg-transparent p-0 shadow-none outline-none ring-0 focus-visible:ring-0"
@@ -69,6 +68,7 @@ const ComboSelectInput: React.FC<ComboSelectInputProps> = ({
               type="button"
               className="flex h-full cursor-pointer items-center justify-center pl-2 outline-none"
               aria-label="Abrir opciones"
+              onClick={() => setOpen((prev) => !prev)}
             >
               <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
             </button>
