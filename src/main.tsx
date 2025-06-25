@@ -11,6 +11,7 @@ import Canva from "./pages/Canva";
 import VistaGeneral from "./pages/VistaGeneral";
 import UbicacionesTecnicas from "./pages/UbicacionesTecnicas";
 import GruposTrabajo from "./components/GruposTrabajo";
+import { Toaster } from "./components/ui/sonner";
 
 const queryClient = new QueryClient();
 
@@ -37,11 +38,11 @@ const router = createBrowserRouter([
         element: <VistaGeneral />,
       },
       {
-        path: "locations",
+        path: "ubicaciones-tecnicas",
         element: <UbicacionesTecnicas />,
       },
       {
-        path: "groups",
+        path: "grupos",
         element: <GruposTrabajo />,
       },
     ],
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
+      <Toaster richColors position="top-center" theme="light" />
       <RouterProvider router={router} />
     </QueryClientProvider>
   </StrictMode>

@@ -14,8 +14,8 @@ import { logout } from "@/services/auth";
 
 const items = [
   { icon: BarChart3, label: "Vista General", path: "/general" },
-  { icon: MapPin, label: "Ubicaciones Técnicas", path: "/locations" },
-  { icon: Users, label: "Grupos de Trabajo", path: "/groups" },
+  { icon: MapPin, label: "Ubicaciones Técnicas", path: "/ubicaciones-tecnicas" },
+  { icon: Users, label: "Grupos de Trabajo", path: "/grupos" },
 ];
 
 export function AppSidebar() {
