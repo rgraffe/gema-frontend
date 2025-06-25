@@ -145,3 +145,24 @@ export async function getUbicacionesDependientes(id: number) {
   }
   return resp.json() as Promise<{ data: UbicacionTecnica[] }>;
 }
+
+/**
+ * Obtiene las ubicaciones técnicas de un nivel específico.
+ * @author gabrielm
+ * @param nivel
+ */
+export async function getUbicacionesPorNivel(nivel: number) {
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+  const token = localStorage.getItem("authToken");
+  const resp = await fetch(`${BASE_URL}/ubicaciones-tecnicas/nivel/${nivel}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(data.error || "Error al obtener ubicaciones por nivel");
+  }
+  return resp.json() as Promise<{ data: UbicacionTecnica[] }>;
+}

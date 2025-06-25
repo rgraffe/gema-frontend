@@ -1,20 +1,25 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import {
   createUbicacionTecnica,
+  getUbicacionesPorNivel,
   getUbicacionesTecnicas,
 } from "@/services/ubicacionesTecnicas";
-import { PlusCircle, Trash } from "lucide-react";
+import { CircleX, LoaderCircle, PlusCircle, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "./ui/switch";
+import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
+import { useState } from "react";
+import { Combobox } from "./ui/combobox";
 
 // Definición del payload
 type CreateUbicacionTecnicaPayload = {
   descripcion: string;
   abreviacion: string;
-  padres?: { idPadre: number; esUbicacionFisica?: boolean }[];
+  padres: { idPadre: number; esUbicacionFisica?: boolean }[];
 };
 
 type UbicacionTecnicaForm = {
@@ -45,6 +50,8 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   displayedLevels,
   setDisplayedLevels,
 }) => {
+  const [esEquipo, setEsEquipo] = useState(false);
+
   const closeModal = () => {
     setDisplayedLevels(1);
     onClose();
@@ -85,16 +92,13 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   };
 
   const queryClient = useQueryClient();
-  const { mutate, status, isError, error } = useMutation<
-    any,
-    unknown,
-    CreateUbicacionTecnicaPayload,
-    unknown
-  >({
+  const { mutate, status, isError, error } = useMutation({
     mutationFn: createUbicacionTecnica,
-    onSuccess: (_data: any) => {
+    onSuccess: (data: {
+      data: { message: string; ubicacion: UbicacionTecnica };
+    }) => {
       queryClient.invalidateQueries({ queryKey: ["ubicacionesTecnicas"] });
-      toast.success("Ubicación técnica creada correctamente");
+      toast.success(data.data.message);
       setFormValues({
         modulo: "",
         planta: "",
@@ -114,6 +118,14 @@ const FormNuevaUbicacion: React.FC<Props> = ({
       );
     },
   });
+
+  const posiblesPadres = useQuery({
+    queryFn: () => getUbicacionesPorNivel(displayedLevels - 1),
+    queryKey: ["ubicacionesPorNivel", displayedLevels - 1],
+    enabled: displayedLevels > 1 && esEquipo,
+  });
+
+  const [padres, setPadres] = useState<(string | number | null)[]>([null]);
 
   const onSubmit = async () => {
     try {
@@ -144,9 +156,22 @@ const FormNuevaUbicacion: React.FC<Props> = ({
         descripcion: formValues.descripcion,
         abreviacion: getAbreviacion(), // Último nivel ingresado
         padres: padreEncontrado
-          ? [{ idPadre: padreEncontrado.idUbicacion, esUbicacionFisica: false }]
+          ? [
+              {
+                idPadre: padreEncontrado.idUbicacion,
+                esUbicacionFisica: esEquipo,
+              },
+            ]
           : [],
       };
+
+      if (esEquipo) {
+        // Agregamos los padres seleccionados en el Combobox
+        const idsPadres = padres
+          .filter((p) => p !== null)
+          .map((id) => ({ idPadre: Number(id), esUbicacionFisica: false }));
+        payload.padres.push(...idsPadres);
+      }
 
       mutate(payload);
     } catch (error) {
@@ -316,6 +341,97 @@ const FormNuevaUbicacion: React.FC<Props> = ({
               <div className="p-2 rounded border-2 border-neutral-300 font-mono text-sm">
                 {generarCodigo()}
               </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="agregar-padres"
+                  checked={esEquipo}
+                  onCheckedChange={setEsEquipo}
+                />
+                <Label
+                  htmlFor="agregar-padres"
+                  className="text-sm text-neutral-700"
+                >
+                  ¿Es un equipo?
+                </Label>
+              </div>
+              {esEquipo && (
+                <>
+                  <p className="text-sm text-neutral-700">
+                    Si aplica, indica los espacios donde el equipo brinda
+                    servicio, además de su ubicación física
+                  </p>
+                  <div className="space-y-2">
+                    {posiblesPadres.isLoading ? (
+                      <LoaderCircle className="animate-spin h-5 w-5" />
+                    ) : posiblesPadres.isError ? (
+                      <p className="text-red-600 text-sm">
+                        Error al cargar ubicaciones.
+                      </p>
+                    ) : (
+                      <>
+                        {padres
+                          .filter((p) => p !== null)
+                          .map((p) =>
+                            posiblesPadres.data?.data.find(
+                              (ubicacion) => ubicacion.idUbicacion == p
+                            )
+                          )
+                          .map((ubicacion) => (
+                            <div
+                              key={ubicacion?.idUbicacion}
+                              className="flex space-x-3 items-center bg-slate-200 rounded px-2 mb-3"
+                            >
+                              <span className="text-sm text-neutral-700">
+                                {ubicacion?.codigo_Identificacion}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                className="text-red-500 hover:text-red-700 hover:bg-slate-100 !px-1"
+                                onClick={() => {
+                                  setPadres((prev) =>
+                                    prev.filter(
+                                      (id) => id != ubicacion?.idUbicacion
+                                    )
+                                  );
+                                }}
+                              >
+                                <CircleX />
+                              </Button>
+                            </div>
+                          ))}
+                        <Combobox
+                          triggerClassName="w-4/5"
+                          contentClassName="w-full"
+                          data={
+                            posiblesPadres.data?.data
+                              .filter(
+                                (ubicacion) =>
+                                  !generarCodigo().includes(
+                                    ubicacion.codigo_Identificacion
+                                  ) &&
+                                  !padres.includes(
+                                    String(ubicacion.idUbicacion)
+                                  )
+                              )
+                              .map((ubicacion) => ({
+                                value: ubicacion.idUbicacion,
+                                label: `${ubicacion.codigo_Identificacion} - ${ubicacion.descripcion}`,
+                              })) || []
+                          }
+                          value={padres.at(-1) || null}
+                          onValueChange={(ubicacion) => {
+                            setPadres((prev) => {
+                              return [...prev, ubicacion, null];
+                            });
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
