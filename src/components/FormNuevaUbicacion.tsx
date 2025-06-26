@@ -189,36 +189,70 @@ const FormNuevaUbicacion: React.FC<Props> = ({
 
   const [padres, setPadres] = useState<(string | number | null)[]>([null]);
 
+  // Helper function to flatten the hierarchy
+  const flattenUbicaciones = (nodes: UbicacionTecnica[]): UbicacionTecnica[] => {
+    let list: UbicacionTecnica[] = [];
+    for (const node of nodes) {
+      const { children, ...rest } = node;
+      list.push(rest as UbicacionTecnica);
+      if (children && children.length > 0) {
+        list = list.concat(flattenUbicaciones(children));
+      }
+    }
+    return list;
+  };
+
   const onSubmit = () => {
     if (!ubicacionesData || !ubicacionesData.data) {
       toast.error("Los datos de ubicaciones aún no se han cargado.");
       return;
     }
 
-    const ubicacionesTecnicasExistentes = ubicacionesData.data;
+    // Aplanar la lista de ubicaciones para buscar al padre correctamente
+    const flatUbicaciones = flattenUbicaciones(ubicacionesData.data);
 
     const codigoCompleto = generarCodigo();
     const partes = codigoCompleto.split("-");
     const codigoSinUltimoNivel = partes.slice(0, -1).join("-");
 
-    const padreEncontrado = ubicacionesTecnicasExistentes.find(
-      (u: any) => u.codigo_Identificacion === codigoSinUltimoNivel
+    // Encontrar el padre físico basado en la jerarquía del formulario
+    const padreFisico = flatUbicaciones.find(
+      (u) => u.codigo_Identificacion === codigoSinUltimoNivel
     );
 
     const payload: CreateUbicacionTecnicaPayload = {
       descripcion: formValues.descripcion,
       abreviacion: getAbreviacion(),
-      padres: padreEncontrado
-        ? [{ idPadre: padreEncontrado.idUbicacion, esUbicacionFisica: false }]
-        : [],
+      padres: [],
     };
 
+    // Si se encontró un padre físico, se agrega como tal.
+    if (padreFisico) {
+      payload.padres.push({ idPadre: padreFisico.idUbicacion, esUbicacionFisica: true });
+    } else if (partes.length > 1) {
+      // Si debería tener un padre pero no se encontró, es un error.
+      toast.error(`Error: No se encontró la ubicación padre con código "${codigoSinUltimoNivel}".`);
+      return;
+    }
+
+    // Si es un equipo, se agregan los padres virtuales seleccionados
     if (esEquipo) {
-      // Agregamos los padres seleccionados en el Combobox
-      const idsPadres = padres
-        .filter((p) => p !== null)
-        .map((id) => ({ idPadre: Number(id), esUbicacionFisica: false }));
-      payload.padres.push(...idsPadres);
+      const idsPadresVirtuales = padres
+        .filter((p): p is number => p !== null && typeof p === 'number')
+        .map((id) => ({ idPadre: id, esUbicacionFisica: false }));
+      
+      for (const p of idsPadresVirtuales) {
+        // Evitar duplicados si un padre virtual ya fue añadido como físico
+        if (!payload.padres.some(existente => existente.idPadre === p.idPadre)) {
+          payload.padres.push(p);
+        }
+      }
+    }
+
+    // Validaciones finales
+    if (!payload.descripcion || !payload.abreviacion) {
+      toast.error("La descripción y la abreviación son requeridas.");
+      return;
     }
 
     mutate(payload);
