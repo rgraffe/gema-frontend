@@ -22,7 +22,8 @@ export async function getUbicacionesTecnicas() {
         "Error al obtener las ubicaciones técnicas, por favor intente de nuevo."
     );
   }
-  return resp.json();
+  const data = (await resp.json()) as { data: UbicacionTecnica[] };
+  return data;
 }
 
 /**

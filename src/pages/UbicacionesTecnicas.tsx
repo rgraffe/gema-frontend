@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CirclePlus, Building, LoaderCircle, Trash } from "lucide-react";
+import {
+  CirclePlus,
+  Building,
+  LoaderCircle,
+  Trash,
+  CornerDownRight,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
 import { Button } from "@/components/ui/button";
@@ -27,6 +33,7 @@ interface DetalleUbicacion {
   idUbicacion: number;
   codigo: string;
   descripcion: string;
+  nivel: number;
 }
 
 interface Modulo {
@@ -127,7 +134,7 @@ const UbicacionesTecnicas: React.FC = () => {
     if (!data || !data.data) return [];
     const ubicaciones = data.data;
     const agrupados = ubicaciones.reduce(
-      (acc: Record<string, Modulo>, item: any) => {
+      (acc: Record<string, Modulo>, item) => {
         // Se asume que el módulo es el primer segmento del codigo_Identificacion
         const key = item.codigo_Identificacion.split("-")[0];
         if (!acc[key]) {
@@ -138,6 +145,7 @@ const UbicacionesTecnicas: React.FC = () => {
           idUbicacion: item.idUbicacion,
           codigo: item.codigo_Identificacion,
           descripcion: item.descripcion,
+          nivel: item.nivel,
         });
         return acc;
       },
@@ -259,14 +267,29 @@ const UbicacionesTecnicas: React.FC = () => {
             </AccordionTrigger>
             <AccordionContent>
               {modulo.detalles.map((detalle, idx) => (
-                <div key={idx} className="flex p-4 bg-white hover:bg-gray-50">
-                  <div className="flex-3/5">
-                    <p className="font-mono font-semibold text-sm">
-                      {detalle.codigo}
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      {detalle.descripcion}
-                    </p>
+                <div
+                  key={idx}
+                  className="flex px-4 py-2 bg-white hover:bg-gray-50"
+                >
+                  <div className="flex-3/5 flex flex-row gap-2">
+                    {detalle.nivel > 1 && (
+                      <div className="flex gap-0">
+                        {detalle.nivel > 2 && (
+                          <div
+                            style={{ width: `${(detalle.nivel - 2) * 16}px` }}
+                          ></div>
+                        )}
+                        <CornerDownRight size={18} />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-mono font-semibold text-sm">
+                        {detalle.codigo}
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {detalle.descripcion}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex flex-2/5 items-center justify-end gap-1">
                     <Tooltip>
