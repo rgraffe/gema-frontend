@@ -60,7 +60,7 @@ export default function Login() {
       localStorage.setItem("authToken", data.data.token);
       localStorage.setItem("username", data.data.usuario.Nombre);
       localStorage.setItem("email", data.data.usuario.Correo);
-      navigate("/general");
+      navigate("/ubicaciones-tecnicas");
     },
     onError: (err) => {
       console.error("Error en Login:", err);
