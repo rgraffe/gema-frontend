@@ -1,5 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { UserCheck, ClipboardPen, Trash2, CirclePlus, UserPlus, UserMinus } from "lucide-react";
+import { useState } from "react";
+import {
+  UserCheck,
+  ClipboardPen,
+  Trash2,
+  CirclePlus,
+  UserPlus,
+  UserMinus,
+  LoaderCircle,
+} from "lucide-react";
 import {
   addTecnicoToGrupo,
   createGrupoDeTrabajo,
@@ -11,6 +19,31 @@ import {
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { getTecnicos } from "@/services/tecnicos";
+import { z } from "zod";
+import { grupoTrabajoSchema } from "@/validators/grupoTrabajoSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./ui/form";
+import { Input } from "./ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Usuario } from "@/types/usuarios.types";
+import { toast } from "sonner";
+import type { Tecnico } from "@/types/tecnicos.types";
+import { Label } from "./ui/label";
 
 interface GrupoTrabajo {
   id: number;
@@ -19,173 +52,73 @@ interface GrupoTrabajo {
   supervisorId: number | null;
 }
 
-
-
 const GruposTrabajo: React.FC = () => {
-  const [trabajadoresPorGrupo, setTrabajadoresPorGrupo] = useState<Record<number, any[]>>({});
-  const [tecnicosDisponibles, setTecnicosDisponibles] = useState<any[]>([])
-  const [grupos, setGrupos] = useState<GrupoTrabajo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTecnicosModalOpen, setIsTecnicosModalOpen] = useState(false);
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null);
-  const [nuevoGrupo, setNuevoGrupo] = useState({
-    codigo: "",
-    nombre: "",
-    supervisorId: 0,
+
+  const gruposTrabajo = useQuery({
+    queryKey: ["gruposTrabajo"],
+    queryFn: () => getGruposDeTrabajo(),
   });
-  const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState<number>(0);
 
-   useEffect(() => {
-    const fetchGrupos = async () => {
-      try {
-        const response = await getGruposDeTrabajo();
-        setGrupos(response.data);
-        
-        // Obtener los trabajadores por grupo 
-        const trabajadoresResp = await getAllWorkersInALLGroups();
-        // Mapear la respuesta a un objeto { grupoId: usuarios[] }
-        const map: Record<number, any[]> = {};
-        trabajadoresResp.data.forEach((item: any) => {
-          map[item.grupoDeTrabajoId] = item.usuarios;
-        });
-        setTrabajadoresPorGrupo(map);
-        
+  const tecnicos = useQuery({
+    queryKey: ["tecnicos"],
+    queryFn: () => getTecnicos(),
+  });
 
-        // Obtener tecnicos existentes
-        const tecnicosResp = await getTecnicos();
-        setTecnicosDisponibles(tecnicosResp.data);
-
-      } catch (error: any) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchGrupos();
-  }, []);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setNuevoGrupo((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleTecnicoSelectChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setTecnicoSeleccionado(Number(e.target.value));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const supervisorId = nuevoGrupo.supervisorId;
-      console.log("ID del supervisor seleccionado: ", supervisorId)
-      const nuevoGrupoCreado = await createGrupoDeTrabajo({
-        codigo: nuevoGrupo.codigo,
-        nombre: nuevoGrupo.nombre,
-        supervisorId: nuevoGrupo.supervisorId,
+  const trabajadoresPorGrupo = useQuery({
+    queryKey: ["trabajadoresPorGrupo"],
+    queryFn: () => getAllWorkersInALLGroups(),
+    select: (data) => {
+      // Mapear la respuesta a un objeto { grupoId: usuarios[] }
+      const map: Record<number, Usuario[]> = {};
+      data.data.forEach((item) => {
+        map[item.grupoDeTrabajoId] = item.usuarios;
       });
-      console.log("GrupoCreado:", nuevoGrupoCreado.data)
-      setGrupos((prev) => [
-  ...prev,
-  {
-    id: nuevoGrupoCreado.data.grupo.id,
-    codigo: nuevoGrupoCreado.data.grupo.codigo,
-    nombre: nuevoGrupoCreado.data.grupo.nombre,
-    supervisorId: nuevoGrupoCreado.data.grupo.supervisorId,
-  },
-]);
+      return map;
+    },
+  });
 
-      setTrabajadoresPorGrupo((prev) => ({
-        ...prev,
-        [nuevoGrupoCreado.data.id]: [],
-      }));
+  const isLoading =
+    gruposTrabajo.isLoading ||
+    tecnicos.isLoading ||
+    trabajadoresPorGrupo.isLoading;
 
-      setIsModalOpen(false);
-      setNuevoGrupo({ codigo: "", nombre: "", supervisorId: 0 });
-    } catch (error: any) {
-      alert(`Error al crear el grupo: ${error.message}`);
-    }
-  };
+  const queryClient = useQueryClient();
 
-  const handleAddTecnico = async () => {
-    if (!selectedGrupoId || !tecnicoSeleccionado) return;
+  const deleteGrupoMutation = useMutation({
+    mutationFn: deleteGrupoDeTrabajo,
+    onSuccess: () => {
+      toast.success("Grupo eliminado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["gruposTrabajo"] });
+      queryClient.invalidateQueries({ queryKey: ["trabajadoresPorGrupo"] });
+      setSelectedGrupoId(null);
+    },
+    onError: (error: Error) => {
+      console.error("Error al eliminar el grupo:", error.message);
+      toast.error("Error al eliminar el grupo");
+    },
+  });
 
-    try {
-      await addTecnicoToGrupo({
-        tecnicoId: tecnicoSeleccionado,
-        grupoDeTrabajoId: selectedGrupoId
-      })
-      setTrabajadoresPorGrupo((prev) => {
-      const nuevos = tecnicosDisponibles.find(t => t.Id === tecnicoSeleccionado);
-      if (!nuevos) return prev;
-      return {
-        ...prev,
-        [selectedGrupoId]: [...(prev[selectedGrupoId] || []), nuevos],
-      };
-    });
-    setTecnicoSeleccionado(0);
-  } catch (error: any) {
-    alert(error.message || "Error al agregar técnico");
-  }
-};
-
-const handleRemoveTecnico = async (tecnicoId: number) => {
-  if (!selectedGrupoId) return;
-  try {
-    await deleteTecnicoFromGrupo({
-      tecnicoId,
-      grupoDeTrabajoId: selectedGrupoId,
-    });
-    setTrabajadoresPorGrupo((prev) => ({
-      ...prev,
-      [selectedGrupoId]: prev[selectedGrupoId].filter((t: any) => t.Id !== tecnicoId),
-    }));
-  } catch (error: any) {
-    alert(error.message || "Error al eliminar técnico");
-  }
-};
-
-const handleDeleteGrupo = async (grupoId: number) => {
-  if (!window.confirm("¿Seguro que deseas eliminar este grupo?")) return;
-  try {
-    await deleteGrupoDeTrabajo(grupoId);
-    setGrupos((prev) => prev.filter((g) => g.id !== grupoId));
-    setTrabajadoresPorGrupo((prev) => {
-      const nuevo = { ...prev };
-      delete nuevo[grupoId];
-      return nuevo;
-    });
-  } catch (error: any) {
-    alert(error.message || "Error al eliminar el grupo");
-  }
-};
   const openTecnicosModal = (grupoId: number) => {
     setSelectedGrupoId(grupoId);
     setIsTecnicosModalOpen(true);
   };
 
-  const getSupervisorNombre = (id: number | null) => {
-    return tecnicosDisponibles.find(s => s.Id === id)?.Nombre || "No asignado";
-  };
+  const getSupervisorNombre = (id: number | null) =>
+    tecnicos.data?.data.find((s) => s.Id === id)?.Nombre || "No asignado";
 
   if (isLoading) {
-    return <div className="p-6 text-center">Cargando grupos de trabajo...</div>;
-  }
-
-  if (error) {
-    return <div className="p-6 text-center text-red-500">Error: {error}</div>;
+    return (
+      <div className="p-6 text-center">
+        <LoaderCircle className="animate-spin text-lg" />
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl">
       <h1 className="text-2xl font-bold mb-3">Grupos de Trabajo</h1>
 
       <Button
@@ -195,167 +128,22 @@ const handleDeleteGrupo = async (grupoId: number) => {
         <CirclePlus />
         Crear nuevo
       </Button>
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Crear Nuevo Grupo</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="mb-4">
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="codigo"
-              >
-                Código
-              </label>
-              <input
-                id="codigo"
-                name="codigo"
-                type="text"
-                value={nuevoGrupo.codigo}
-                onChange={handleInputChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                required
-              />
-            </div>
 
-            <div className="mb-4">
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="nombre"
-              >
-                Nombre del Grupo
-              </label>
-              <input
-                id="nombre"
-                name="nombre"
-                type="text"
-                value={nuevoGrupo.nombre}
-                onChange={handleInputChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                required
-              />
-            </div>
+      <CreateGrupoForm
+        isModalOpen={isModalOpen}
+        setIsModalOpen={setIsModalOpen}
+        tecnicosDisponibles={tecnicos.data?.data || []}
+      />
 
-            <div className="mb-6">
-              <label
-                className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="supervisor"
-              >
-                Supervisor
-              </label>
-              <select
-                id="supervisor"
-                name="supervisorId"
-                value={nuevoGrupo.supervisorId}
-                onChange={handleInputChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                required
-              >
-                <option value="">Seleccione un supervisor</option>
-                {tecnicosDisponibles.map((sup) => (
-                  <option key={sup.Id} value={sup.Id}>
-                    {sup.Nombre} ({sup.Correo})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md cursor-pointer"
-              >
-                Guardar
-              </button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal para gestión de técnicos */}
-      <Dialog open={isTecnicosModalOpen} onOpenChange={setIsTecnicosModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              Técnicos del Grupo {grupos.find(g => g.id === selectedGrupoId)?.codigo}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedGrupoId && (
-            <div className="space-y-4">
-              {/* Formulario para agregar técnico */}
-              <div className="mb-6">
-                <label
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="tecnico"
-                >
-                  Agregar Técnico
-                </label>
-                <select
-                  id="tecnico"
-                  name="tecnicoId"
-                  value={tecnicoSeleccionado || ''}
-                  onChange={handleTecnicoSelectChange}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                >
-                  <option value="0">Seleccione un técnico</option>
-                  {tecnicosDisponibles
-                  .filter(tec =>
-                    !(trabajadoresPorGrupo[selectedGrupoId]?.some((t: any) => t.Id === tec.Id))
-                  )
-                  .map((tec) => (
-                    <option key={tec.Id} value={tec.Id}>
-                      {tec.Nombre} ({tec.Correo})
-                    </option>
-                  ))}
-                </select>
-                <div className="flex justify-end mt-2">
-                  <Button 
-                    className="bg-gema-green hover:bg-green-700"
-                    onClick={handleAddTecnico}
-                    disabled={!tecnicoSeleccionado}
-                    type='button'
-                  >
-                    <UserPlus className="mr-2" />
-                    Agregar Técnico
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Lista de técnicos */}
-              <div className="border rounded-lg divide-y">
-                {trabajadoresPorGrupo[selectedGrupoId]?.length ? (
-                  trabajadoresPorGrupo[selectedGrupoId].map(tecnico => (
-                    <div key={tecnico.Id} className="p-4 flex justify-between items-center hover:bg-gray-50">
-                      <div>
-                        <p className="font-medium">{tecnico.Nombre}</p>
-                        <p className="text-sm text-gray-600">{tecnico.Correo}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => handleRemoveTecnico(tecnico.Id)}
-                      >
-                        <UserMinus />
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="p-4 text-gray-500 text-center">No hay técnicos en este grupo</p>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <GestionTecnicosForm
+        isTecnicosModalOpen={isTecnicosModalOpen}
+        setIsTecnicosModalOpen={setIsTecnicosModalOpen}
+        grupoTrabajo={
+          gruposTrabajo.data?.data.find((g) => g.id === selectedGrupoId) || null
+        }
+        tecnicosDisponibles={tecnicos.data?.data || []}
+        trabajadoresPorGrupo={trabajadoresPorGrupo.data || {}}
+      />
 
       <div className="overflow-x-auto">
         {/* Tabla en desktop */}
@@ -380,7 +168,7 @@ const handleDeleteGrupo = async (grupoId: number) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {grupos.map((grupo) => ((console.log("grupo", grupo)),
+            {gruposTrabajo.data?.data.map((grupo) => (
               <tr key={grupo.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg font-bold">
@@ -396,12 +184,12 @@ const handleDeleteGrupo = async (grupoId: number) => {
                     <span>{getSupervisorNombre(grupo.supervisorId)}</span>
                   </div>
                 </td>
-                <td 
+                <td
                   className="px-6 py-4 whitespace-nowrap text-sm cursor-pointer"
                   onClick={() => openTecnicosModal(grupo.id)}
                 >
                   <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-200 font-medium hover:bg-gray-300 transition">
-                    {trabajadoresPorGrupo[grupo.id]?.length || 0}
+                    {trabajadoresPorGrupo.data?.[grupo.id]?.length || 0}
                   </div>
                 </td>
                 <td className="flex items-center justify-evenly gap-2 px-6 py-4 whitespace-nowrap text-sm">
@@ -409,9 +197,9 @@ const handleDeleteGrupo = async (grupoId: number) => {
                     <ClipboardPen className="h-5 w-5 text-blue-500 cursor-pointer" />
                   </div>
                   <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
-                    <Trash2 
-                      className="h-5 w-5 text-red-500 cursor-pointer" 
-                      onClick={()=> handleDeleteGrupo(grupo.id)}
+                    <Trash2
+                      className="h-5 w-5 text-red-500 cursor-pointer"
+                      onClick={() => deleteGrupoMutation.mutate(grupo.id)}
                     />
                   </div>
                 </td>
@@ -422,7 +210,7 @@ const handleDeleteGrupo = async (grupoId: number) => {
 
         {/* Cards en móvil */}
         <div className="md:hidden space-y-4">
-          {grupos.map((grupo) => (
+          {gruposTrabajo.data?.data.map((grupo) => (
             <div
               key={grupo.id}
               className="bg-white p-4 rounded-lg shadow border border-gray-200"
@@ -437,9 +225,9 @@ const handleDeleteGrupo = async (grupoId: number) => {
                       <ClipboardPen className="h-5 w-5 text-blue-500" />
                     </button>
                     <button className="p-1 border-2 border-gray-200 rounded-sm">
-                      <Trash2 
-                        className="h-5 w-5 text-red-500" 
-                        onClick={()=> handleDeleteGrupo(grupo.id)}
+                      <Trash2
+                        className="h-5 w-5 text-red-500"
+                        onClick={() => deleteGrupoMutation.mutate(grupo.id)}
                       />
                     </button>
                   </div>
@@ -451,14 +239,16 @@ const handleDeleteGrupo = async (grupoId: number) => {
 
                 <div className="flex items-center space-x-2">
                   <UserCheck className="h-5 w-5 text-green-500" />
-                  <span className="text-sm">{getSupervisorNombre(grupo.supervisorId)}</span>
+                  <span className="text-sm">
+                    {getSupervisorNombre(grupo.supervisorId)}
+                  </span>
                 </div>
 
-                <div 
+                <div
                   className="border-2 border-gray-300 rounded-lg bg-gray-200 font-medium px-3 py-1 inline-block text-sm cursor-pointer hover:bg-gray-300"
                   onClick={() => openTecnicosModal(grupo.id)}
                 >
-                  {trabajadoresPorGrupo[grupo.id]?.length || 0} Técnicos
+                  {trabajadoresPorGrupo.data?.[grupo.id]?.length || 0} Técnicos
                 </div>
               </div>
             </div>
@@ -468,5 +258,280 @@ const handleDeleteGrupo = async (grupoId: number) => {
     </div>
   );
 };
+
+function CreateGrupoForm({
+  isModalOpen,
+  setIsModalOpen,
+  tecnicosDisponibles,
+}: {
+  isModalOpen: boolean;
+  setIsModalOpen: (open: boolean) => void;
+  tecnicosDisponibles: Tecnico[];
+}) {
+  const grupoForm = useForm<z.infer<typeof grupoTrabajoSchema>>({
+    resolver: zodResolver(grupoTrabajoSchema),
+    defaultValues: {
+      codigo: "",
+      nombre: "",
+    },
+  });
+
+  const queryClient = useQueryClient();
+
+  const createGrupoMutation = useMutation({
+    mutationFn: createGrupoDeTrabajo,
+    onSuccess: () => {
+      grupoForm.reset();
+      setIsModalOpen(false);
+      toast.success("Grupo creado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["gruposTrabajo"] });
+      queryClient.invalidateQueries({ queryKey: ["trabajadoresPorGrupo"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error al crear el grupo:", error.message);
+      toast.error("Error al crear el grupo");
+    },
+  });
+
+  const handleSubmit = (values: z.infer<typeof grupoTrabajoSchema>) => {
+    createGrupoMutation.mutate({
+      codigo: values.codigo,
+      nombre: values.nombre,
+      supervisorId: Number(values.supervisor),
+    });
+  };
+
+  return (
+    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Crear Nuevo Grupo</DialogTitle>
+        </DialogHeader>
+        <Form {...grupoForm}>
+          <form
+            onSubmit={grupoForm.handleSubmit((values) => handleSubmit(values))}
+            className="p-6 space-y-4"
+          >
+            <FormField
+              control={grupoForm.control}
+              name="codigo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ejemplo: SGMREF" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={grupoForm.control}
+              name="nombre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Grupo</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ejemplo: Grupo de Mantenimiento de Refrigeración"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={grupoForm.control}
+              name="supervisor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supervisor</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value ? String(field.value) : undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccione un supervisor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tecnicosDisponibles.map((sup) => (
+                        <SelectItem key={sup.Id} value={String(sup.Id)}>
+                          {sup.Nombre} ({sup.Correo})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gema-green hover:bg-green-700"
+              >
+                Guardar
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function GestionTecnicosForm({
+  isTecnicosModalOpen,
+  setIsTecnicosModalOpen,
+  grupoTrabajo,
+  tecnicosDisponibles,
+  trabajadoresPorGrupo,
+}: {
+  isTecnicosModalOpen: boolean;
+  setIsTecnicosModalOpen: (open: boolean) => void;
+  grupoTrabajo: GrupoTrabajo | null;
+  tecnicosDisponibles: Tecnico[];
+  trabajadoresPorGrupo: Record<number, Usuario[]>;
+}) {
+  const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState<string | null>(
+    null
+  );
+
+  const queryClient = useQueryClient();
+
+  const addTecnicoMutation = useMutation({
+    mutationFn: addTecnicoToGrupo,
+    onSuccess: () => {
+      setTecnicoSeleccionado(null);
+      toast.success("Técnico agregado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["trabajadoresPorGrupo"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error al agregar técnico:", error.message);
+      toast.error("Error al agregar técnico");
+    },
+  });
+
+  const handleAddTecnico = () => {
+    if (!grupoTrabajo || !tecnicoSeleccionado) return;
+    addTecnicoMutation.mutate({
+      tecnicoId: Number(tecnicoSeleccionado),
+      grupoDeTrabajoId: grupoTrabajo.id,
+    });
+  };
+
+  const removeTecnicoMutation = useMutation({
+    mutationFn: deleteTecnicoFromGrupo,
+    onSuccess: () => {
+      toast.success("Técnico eliminado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["trabajadoresPorGrupo"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error al eliminar técnico:", error.message);
+      toast.error("Error al eliminar técnico");
+    },
+  });
+
+  const handleRemoveTecnico = (tecnicoId: number) => {
+    if (!grupoTrabajo) return;
+    removeTecnicoMutation.mutate({
+      tecnicoId,
+      grupoDeTrabajoId: grupoTrabajo.id,
+    });
+  };
+
+  return (
+    <Dialog open={isTecnicosModalOpen} onOpenChange={setIsTecnicosModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold">
+            Técnicos del Grupo {grupoTrabajo?.codigo}
+          </DialogTitle>
+        </DialogHeader>
+
+        {grupoTrabajo && (
+          <div className="space-y-4 mt-3">
+            {/* Formulario para agregar técnico */}
+            <div className="mb-6 space-y-2">
+              <Label htmlFor="tecnico">Agregar Técnico</Label>
+              <Select
+                value={tecnicoSeleccionado || ""}
+                onValueChange={setTecnicoSeleccionado}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccione un técnico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tecnicosDisponibles
+                    .filter(
+                      (tec) =>
+                        !trabajadoresPorGrupo[grupoTrabajo.id]?.some(
+                          (t) => t.Id === tec.Id
+                        )
+                    )
+                    .map((tec) => (
+                      <SelectItem key={tec.Id} value={String(tec.Id)}>
+                        {tec.Nombre} ({tec.Correo})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+
+              <div className="flex justify-end mt-2">
+                <Button
+                  className="bg-gema-green hover:bg-green-700"
+                  onClick={handleAddTecnico}
+                  disabled={!tecnicoSeleccionado}
+                  type="button"
+                >
+                  <UserPlus className="mr-2" />
+                  Agregar Técnico
+                </Button>
+              </div>
+            </div>
+
+            {/* Lista de técnicos */}
+            <div className="border rounded-lg divide-y">
+              {trabajadoresPorGrupo[grupoTrabajo.id]?.length ? (
+                trabajadoresPorGrupo[grupoTrabajo.id].map((tecnico) => (
+                  <div
+                    key={tecnico.Id}
+                    className="p-4 flex justify-between items-center hover:bg-gray-50"
+                  >
+                    <div>
+                      <p className="font-medium">{tecnico.Nombre}</p>
+                      <p className="text-sm text-gray-600">{tecnico.Correo}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => handleRemoveTecnico(tecnico.Id)}
+                    >
+                      <UserMinus />
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="p-4 text-gray-500 text-center">
+                  No hay técnicos en este grupo
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default GruposTrabajo;
