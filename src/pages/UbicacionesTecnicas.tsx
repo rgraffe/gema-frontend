@@ -318,7 +318,9 @@ const UbicacionesTecnicas: React.FC = () => {
       </Dialog>
 
       {/* Filtros por niveles */}
-      <p className="text-sm text-neutral-800 font-semibold">Filtrar:</p>
+      {!!data?.data.length && (
+        <p className="text-sm text-neutral-800 font-semibold">Filtrar:</p>
+      )}
       <div className="flex flex-wrap gap-3 mb-5">
         {NIVELES.map((nivel, idx) => {
           // Solo mostrar el siguiente selector si el anterior está seleccionado
