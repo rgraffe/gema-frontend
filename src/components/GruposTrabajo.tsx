@@ -13,6 +13,7 @@ import {
   createGrupoDeTrabajo,
   deleteGrupoDeTrabajo,
   deleteTecnicoFromGrupo,
+  editGrupoDeTrabajo,
   getAllWorkersInALLGroups,
   getGruposDeTrabajo,
 } from "@/services/gruposDeTrabajo";
@@ -56,6 +57,7 @@ const GruposTrabajo: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTecnicosModalOpen, setIsTecnicosModalOpen] = useState(false);
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null);
+  const [grupoEditar, setGrupoEditar] = useState<GrupoTrabajo | null>(null);
 
   const gruposTrabajo = useQuery({
     queryKey: ["gruposTrabajo"],
@@ -145,6 +147,14 @@ const GruposTrabajo: React.FC = () => {
         trabajadoresPorGrupo={trabajadoresPorGrupo.data || {}}
       />
 
+      {grupoEditar && (
+        <EditGrupoForm
+          grupo={grupoEditar}
+          setGrupo={setGrupoEditar}
+          tecnicosDisponibles={tecnicos.data?.data || []}
+        />
+      )}
+
       <div className="overflow-x-auto">
         {/* Tabla en desktop */}
         <table className="hidden md:table min-w-full bg-white border border-gray-200">
@@ -194,7 +204,10 @@ const GruposTrabajo: React.FC = () => {
                 </td>
                 <td className="flex items-center justify-evenly gap-2 px-6 py-4 whitespace-nowrap text-sm">
                   <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
-                    <ClipboardPen className="h-5 w-5 text-blue-500 cursor-pointer" />
+                    <ClipboardPen
+                      className="h-5 w-5 text-blue-500 cursor-pointer"
+                      onClick={() => setGrupoEditar(grupo)}
+                    />
                   </div>
                   <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
                     <Trash2
@@ -529,6 +542,145 @@ function GestionTecnicosForm({
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditGrupoForm({
+  grupo,
+  setGrupo,
+  tecnicosDisponibles,
+}: {
+  grupo: GrupoTrabajo | null;
+  setGrupo: (grupo: GrupoTrabajo | null) => void;
+  tecnicosDisponibles: Tecnico[];
+}) {
+  const grupoForm = useForm<z.infer<typeof grupoTrabajoSchema>>({
+    resolver: zodResolver(grupoTrabajoSchema),
+    defaultValues: {
+      codigo: grupo?.codigo || "",
+      nombre: grupo?.nombre || "",
+      supervisor: grupo?.supervisorId ? grupo.supervisorId : undefined,
+    },
+  });
+
+  const queryClient = useQueryClient();
+
+  const editGrupoMutation = useMutation({
+    mutationFn: editGrupoDeTrabajo,
+    onSuccess: () => {
+      grupoForm.reset();
+      setGrupo(null);
+      toast.success("Grupo editado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["gruposTrabajo"] });
+      queryClient.invalidateQueries({ queryKey: ["trabajadoresPorGrupo"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error al editar el grupo:", error.message);
+      toast.error("Error al editar el grupo");
+    },
+  });
+
+  const handleSubmit = (values: z.infer<typeof grupoTrabajoSchema>) => {
+    if (!grupo) return;
+    editGrupoMutation.mutate({
+      id: grupo.id,
+      codigo: values.codigo,
+      nombre: values.nombre,
+      supervisorId: Number(values.supervisor),
+    });
+  };
+
+  return (
+    <Dialog
+      open={grupo !== null}
+      onOpenChange={(open) => {
+        if (!open) setGrupo(null);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Grupo</DialogTitle>
+        </DialogHeader>
+        <Form {...grupoForm}>
+          <form
+            onSubmit={grupoForm.handleSubmit((values) => handleSubmit(values))}
+            className="p-6 space-y-4"
+          >
+            <FormField
+              control={grupoForm.control}
+              name="codigo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ejemplo: SGMREF" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={grupoForm.control}
+              name="nombre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Grupo</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ejemplo: Grupo de Mantenimiento de Refrigeración"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={grupoForm.control}
+              name="supervisor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supervisor</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value ? String(field.value) : undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccione un supervisor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tecnicosDisponibles.map((sup) => (
+                        <SelectItem key={sup.Id} value={String(sup.Id)}>
+                          {sup.Nombre} ({sup.Correo})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setGrupo(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gema-green hover:bg-green-700"
+              >
+                Guardar cambios
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -230,3 +230,44 @@ export async function deleteGrupoDeTrabajo(grupoDeTrabajoId: number) {
 
   return resp.json();
 }
+
+/**
+ * Edita un grupo de trabajo existente.
+ * @author gabrielm
+ */
+export async function editGrupoDeTrabajo({
+  id,
+  codigo,
+  nombre,
+  supervisorId,
+}: {
+  id: number;
+  codigo: string;
+  nombre: string;
+  supervisorId: number;
+}) {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación");
+  }
+
+  const resp = await fetch(
+    `${import.meta.env.VITE_BACKEND_BASE_URL}/grupos/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ codigo, nombre, supervisorId }),
+    }
+  );
+
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(data.error || "Error al crear el grupo de trabajo.");
+  }
+
+  return resp.json();
+}
