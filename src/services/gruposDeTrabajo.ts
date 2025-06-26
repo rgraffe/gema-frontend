@@ -1,26 +1,31 @@
+import type { GrupoTrabajo, TrabajaEnGrupo } from "@/types/gruposTrabajo.types";
+
+/**
+ * Obtiene la lista de grupos de trabajo.
+ * @author AndresChacon00
+ */
 export async function getGruposDeTrabajo() {
-    const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken");
 
-    if (!token) {
-        throw new Error("No se encontró el token de autenticación");
-    }
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación");
+  }
 
-    const resp = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/grupos`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-    });
+  const resp = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/grupos`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (!resp.ok) {
-        const data = await resp.json();
-        throw new Error(
-            data.error || "Error al obtener los grupos de trabajo."
-        );
-    }
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(data.error || "Error al obtener los grupos de trabajo.");
+  }
 
-    return resp.json();
+  const data = (await resp.json()) as { data: GrupoTrabajo[] };
+  return data;
 }
 
 /**
@@ -64,51 +69,60 @@ export async function createGrupoDeTrabajo({
 }
 
 export async function getAllWorkersInGroup({
-  grupoDeTrabajoId
-} :
-{
-  grupoDeTrabajoId: number
+  grupoDeTrabajoId,
+}: {
+  grupoDeTrabajoId: number;
 }) {
-  const token = localStorage.getItem("authToken")
+  const token = localStorage.getItem("authToken");
   if (!token) {
     throw new Error("No se encontró el token de autenticación");
   }
-  const resp = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo/${grupoDeTrabajoId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-
-  })
+  const resp = await fetch(
+    `${
+      import.meta.env.VITE_BACKEND_BASE_URL
+    }/trabajaEnGrupo/${grupoDeTrabajoId}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(data.error || "Error al crear el grupo de trabajo.");
   }
 
   return resp.json();
-
 }
 
+/**
+ * Obtiene todos los trabajadores en todos los grupos de trabajo.
+ * @author AndresChacon00
+ */
 export async function getAllWorkersInALLGroups() {
-  const token = localStorage.getItem("authToken")
+  const token = localStorage.getItem("authToken");
   if (!token) {
     throw new Error("No se encontró el token de autenticación");
   }
-  const resp = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-
-  })
+  const resp = await fetch(
+    `${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(data.error || "Error al crear el grupo de trabajo.");
   }
-  
-  return resp.json();
+
+  const data = (await resp.json()) as { data: TrabajaEnGrupo[] };
+  return data;
 }
 
 /**
@@ -121,23 +135,26 @@ export async function addTecnicoToGrupo({
   tecnicoId,
   grupoDeTrabajoId,
 }: {
-  tecnicoId: number,
-  grupoDeTrabajoId: number
+  tecnicoId: number;
+  grupoDeTrabajoId: number;
 }) {
   const token = localStorage.getItem("authToken");
   if (!token) {
     throw new Error("No se encontró el token de autenticación");
   }
 
-  const resp = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ tecnicoId, grupoDeTrabajoId})
-  });
-  if (!resp.ok){
+  const resp = await fetch(
+    `${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ tecnicoId, grupoDeTrabajoId }),
+    }
+  );
+  if (!resp.ok) {
     const data = await resp.json();
     throw new Error(data.error || "Error al agregar el técnico al grupo.");
   }
@@ -163,7 +180,9 @@ export async function deleteTecnicoFromGrupo({
   }
 
   const resp = await fetch(
-    `${import.meta.env.VITE_BACKEND_BASE_URL}/trabajaEnGrupo/${tecnicoId}/${grupoDeTrabajoId}`,
+    `${
+      import.meta.env.VITE_BACKEND_BASE_URL
+    }/trabajaEnGrupo/${tecnicoId}/${grupoDeTrabajoId}`,
     {
       method: "DELETE",
       headers: {
@@ -207,6 +226,47 @@ export async function deleteGrupoDeTrabajo(grupoDeTrabajoId: number) {
   if (!resp.ok) {
     const data = await resp.json();
     throw new Error(data.error || "Error al eliminar el grupo de trabajo.");
+  }
+
+  return resp.json();
+}
+
+/**
+ * Edita un grupo de trabajo existente.
+ * @author gabrielm
+ */
+export async function editGrupoDeTrabajo({
+  id,
+  codigo,
+  nombre,
+  supervisorId,
+}: {
+  id: number;
+  codigo: string;
+  nombre: string;
+  supervisorId: number;
+}) {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación");
+  }
+
+  const resp = await fetch(
+    `${import.meta.env.VITE_BACKEND_BASE_URL}/grupos/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ codigo, nombre, supervisorId }),
+    }
+  );
+
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(data.error || "Error al crear el grupo de trabajo.");
   }
 
   return resp.json();
