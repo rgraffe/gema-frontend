@@ -58,7 +58,7 @@ const UbicacionHierarchy: React.FC<{
         <div key={ubicacion.idUbicacion}>
           <div className="flex px-4 py-2 bg-white hover:bg-gray-50 items-center">
             <div className="flex-3/5 flex flex-row items-center gap-2">
-              <div style={{ paddingLeft: `${(ubicacion.nivel - 1) * 16}px` }}>
+              <div style={{ paddingLeft: `${(ubicacion.nivel - 1) * 20}px` }}>
                 {ubicacion.nivel > 1 && (
                   <CornerDownRight size={18} className="text-gray-400" />
                 )}
@@ -148,7 +148,7 @@ const UbicacionesTecnicas: React.FC = () => {
     const valoresIniciales = { ...formValues };
     let levelAmount = 0;
     NIVELES.forEach((nivel, index) => {
-      (valoresIniciales as any)[nivel] = nivelesExtraidos[index] || "";
+      valoresIniciales[nivel] = nivelesExtraidos[index] || "";
       if (nivelesExtraidos[index]) levelAmount++;
     });
     // Actualizar el estado del formulario con los valores extraídos
@@ -206,14 +206,19 @@ const UbicacionesTecnicas: React.FC = () => {
     for (let i = 0; i < NIVELES.length; i++) {
       const n = NIVELES[i];
       if (n === nivel) break;
-      if ((prevFilters as any)[n]) {
+      if (prevFilters[n]) {
         ubicaciones = ubicaciones.filter(
-          (u) => (u.codigo_Identificacion.split("-")[i] || "") === (prevFilters as any)[n]
+          (u) =>
+            (u.codigo_Identificacion.split("-")[i] || "") === prevFilters[n]
         );
       }
     }
     const idx = NIVELES.indexOf(nivel as (typeof NIVELES)[number]);
-    return Array.from(new Set(ubicaciones.map(u => u.codigo_Identificacion.split("-")[idx] || ""))).filter(Boolean);
+    return Array.from(
+      new Set(
+        ubicaciones.map((u) => u.codigo_Identificacion.split("-")[idx] || "")
+      )
+    ).filter(Boolean);
   };
 
   const filteredData = React.useMemo(() => {
@@ -223,8 +228,10 @@ const UbicacionesTecnicas: React.FC = () => {
     const filterTree = (nodes: UbicacionTecnica[]): UbicacionTecnica[] => {
       return nodes.reduce((acc, node) => {
         const children = node.children ? filterTree(node.children) : [];
-        const parts = node.codigo_Identificacion.split('-');
-        const selfMatch = NIVELES.every((nivel, idx) => !(filters as any)[nivel] || parts[idx] === (filters as any)[nivel]);
+        const parts = node.codigo_Identificacion.split("-");
+        const selfMatch = NIVELES.every(
+          (nivel, idx) => !filters[nivel] || parts[idx] === filters[nivel]
+        );
 
         if (selfMatch || children.length > 0) {
           acc.push({ ...node, children });
@@ -238,7 +245,10 @@ const UbicacionesTecnicas: React.FC = () => {
 
   const countChildren = (node: UbicacionTecnica): number => {
     if (!node.children || node.children.length === 0) return 0;
-    return node.children.length + node.children.reduce((sum, child) => sum + countChildren(child), 0);
+    return (
+      node.children.length +
+      node.children.reduce((sum, child) => sum + countChildren(child), 0)
+    );
   };
 
   if (isLoading)
@@ -286,7 +296,8 @@ const UbicacionesTecnicas: React.FC = () => {
                 <b>Nombre de la ubicación:</b> {borrarUbicacion?.descripcion}
               </li>
               <li className="text-neutral-700 text-sm">
-                <b>Código de identificación:</b> {borrarUbicacion?.codigo_Identificacion}
+                <b>Código de identificación:</b>{" "}
+                {borrarUbicacion?.codigo_Identificacion}
               </li>
             </ul>
             <p className="text-neutral-700 text-sm pt-4">
@@ -342,20 +353,20 @@ const UbicacionesTecnicas: React.FC = () => {
       <div className="flex flex-wrap gap-3 mb-5">
         {NIVELES.map((nivel, idx) => {
           // Solo mostrar el siguiente selector si el anterior está seleccionado
-          if (idx > 0 && !(filters as any)[NIVELES[idx - 1]]) return null;
+          if (idx > 0 && !filters[NIVELES[idx - 1]]) return null;
           const opciones = getOptions(nivel, filters);
           if (!opciones.length) return null;
           return (
             <Select
-              value={(filters as any)[nivel]}
+              value={filters[nivel]}
               key={nivel}
               onValueChange={(value) => {
                 setFilters((prev) => {
                   // Limpiar los niveles siguientes
                   const updated = { ...prev };
-                  (updated as any)[nivel] = value;
+                  updated[nivel] = value;
                   for (let i = idx + 1; i < NIVELES.length; i++)
-                    (updated as any)[NIVELES[i]] = "";
+                    updated[NIVELES[i]] = "";
                   return updated;
                 });
               }}
@@ -400,18 +411,27 @@ const UbicacionesTecnicas: React.FC = () => {
         defaultValue={filteredData[0]?.codigo_Identificacion}
       >
         {filteredData.map((ubicacion) => (
-          <AccordionItem key={ubicacion.idUbicacion} value={ubicacion.codigo_Identificacion}>
+          <AccordionItem
+            key={ubicacion.idUbicacion}
+            value={ubicacion.codigo_Identificacion}
+          >
             <AccordionTrigger className="bg-gray-100 hover:bg-gray-200 hover:cursor-pointer px-3">
               <span className="flex items-center gap-2">
                 <Building className="text-blue-600 w-5 h-5" />
-                <span className="text-lg font-semibold">{ubicacion.codigo_Identificacion}</span>
+                <span className="text-lg font-semibold">
+                  {ubicacion.codigo_Identificacion}
+                </span>
                 <span className="bg-gray-200 text-xs font-medium px-2 py-0.5 rounded-full ml-2 text-neutral-600">
                   {1 + countChildren(ubicacion)} ubicaciones
                 </span>
               </span>
             </AccordionTrigger>
             <AccordionContent>
-              <UbicacionHierarchy ubicaciones={[ubicacion]} onEdit={initializeFormValues} onDelete={setBorrarUbicacion} />
+              <UbicacionHierarchy
+                ubicaciones={[ubicacion]}
+                onEdit={initializeFormValues}
+                onDelete={setBorrarUbicacion}
+              />
             </AccordionContent>
           </AccordionItem>
         ))}
