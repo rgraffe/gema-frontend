@@ -1,4 +1,4 @@
-import { BarChart3, LogOut, MapPin, UserCircle, Users } from "lucide-react";
+import { LogOut, MapPin, UserCircle, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,8 +13,12 @@ import { Button } from "./ui/button";
 import { logout } from "@/services/auth";
 
 const items = [
-  { icon: BarChart3, label: "Vista General", path: "/general" },
-  { icon: MapPin, label: "Ubicaciones Técnicas", path: "/ubicaciones-tecnicas" },
+  // { icon: BarChart3, label: "Vista General", path: "/general" },
+  {
+    icon: MapPin,
+    label: "Ubicaciones Técnicas",
+    path: "/ubicaciones-tecnicas",
+  },
   { icon: Users, label: "Grupos de Trabajo", path: "/grupos" },
 ];
 
