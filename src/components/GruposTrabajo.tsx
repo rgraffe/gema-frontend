@@ -58,6 +58,7 @@ const GruposTrabajo: React.FC = () => {
   const [isTecnicosModalOpen, setIsTecnicosModalOpen] = useState(false);
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null);
   const [grupoEditar, setGrupoEditar] = useState<GrupoTrabajo | null>(null);
+  const [grupoEliminar, setGrupoEliminar] = useState<GrupoTrabajo | null>(null);
 
   const gruposTrabajo = useQuery({
     queryKey: ["gruposTrabajo"],
@@ -86,22 +87,6 @@ const GruposTrabajo: React.FC = () => {
     gruposTrabajo.isLoading ||
     tecnicos.isLoading ||
     trabajadoresPorGrupo.isLoading;
-
-  const queryClient = useQueryClient();
-
-  const deleteGrupoMutation = useMutation({
-    mutationFn: deleteGrupoDeTrabajo,
-    onSuccess: () => {
-      toast.success("Grupo eliminado exitosamente");
-      queryClient.invalidateQueries({ queryKey: ["gruposTrabajo"] });
-      queryClient.invalidateQueries({ queryKey: ["trabajadoresPorGrupo"] });
-      setSelectedGrupoId(null);
-    },
-    onError: (error: Error) => {
-      console.error("Error al eliminar el grupo:", error.message);
-      toast.error("Error al eliminar el grupo");
-    },
-  });
 
   const openTecnicosModal = (grupoId: number) => {
     setSelectedGrupoId(grupoId);
@@ -154,6 +139,8 @@ const GruposTrabajo: React.FC = () => {
           tecnicosDisponibles={tecnicos.data?.data || []}
         />
       )}
+
+      <EliminarGrupoForm grupo={grupoEliminar} setGrupo={setGrupoEliminar} />
 
       <div className="overflow-x-auto">
         {/* Tabla en desktop */}
@@ -212,7 +199,7 @@ const GruposTrabajo: React.FC = () => {
                   <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
                     <Trash2
                       className="h-5 w-5 text-red-500 cursor-pointer"
-                      onClick={() => deleteGrupoMutation.mutate(grupo.id)}
+                      onClick={() => setGrupoEliminar(grupo)}
                     />
                   </div>
                 </td>
@@ -240,7 +227,7 @@ const GruposTrabajo: React.FC = () => {
                     <button className="p-1 border-2 border-gray-200 rounded-sm">
                       <Trash2
                         className="h-5 w-5 text-red-500"
-                        onClick={() => deleteGrupoMutation.mutate(grupo.id)}
+                        onClick={() => setGrupoEliminar(grupo)}
                       />
                     </button>
                   </div>
@@ -681,6 +668,72 @@ function EditGrupoForm({
             </div>
           </form>
         </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EliminarGrupoForm({
+  grupo,
+  setGrupo,
+}: {
+  grupo: GrupoTrabajo | null;
+  setGrupo: (grupo: GrupoTrabajo | null) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const deleteGrupoMutation = useMutation({
+    mutationFn: deleteGrupoDeTrabajo,
+    onSuccess: () => {
+      toast.success("Grupo eliminado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["gruposTrabajo"] });
+      queryClient.invalidateQueries({ queryKey: ["trabajadoresPorGrupo"] });
+      setGrupo(null);
+    },
+    onError: (error: Error) => {
+      console.error("Error al eliminar el grupo:", error.message);
+      toast.error("Error al eliminar el grupo");
+    },
+  });
+
+  const handleDelete = () => {
+    if (!grupo) return;
+    deleteGrupoMutation.mutate(grupo.id);
+  };
+
+  return (
+    <Dialog
+      open={grupo !== null}
+      onOpenChange={(open) => {
+        if (!open) setGrupo(null);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Eliminar Grupo</DialogTitle>
+        </DialogHeader>
+        <div className="p-6">
+          <p className="mb-4">
+            ¿Estás seguro de que deseas eliminar el grupo{" "}
+            <strong>{grupo?.nombre}</strong>? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setGrupo(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleDelete}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
