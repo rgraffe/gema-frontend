@@ -28,6 +28,13 @@ import {
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DetalleUbicacion {
   idUbicacion: number;
@@ -128,14 +135,76 @@ const UbicacionesTecnicas: React.FC = () => {
     },
   });
 
-  // Agrupar ubicaciones por el primer segmento del campo codigo_Identificacion (Nivel 1)
-  const modulos: Modulo[] = React.useMemo(() => {
-    // Se espera que el servicio retorne un objeto con la propiedad 'data' que contiene el arreglo de ubicaciones
+  const [filters, setFilters] = useState({
+    modulo: "",
+    planta: "",
+    espacio: "",
+    tipo: "",
+    subtipo: "",
+    numero: "",
+    pieza: "",
+  });
+
+  // Obtener opciones únicas para cada nivel según el filtro anterior
+  const getOptions = (nivel: string, prevFilters: typeof filters) => {
     if (!data || !data.data) return [];
-    const ubicaciones = data.data;
+    let ubicaciones = data.data;
+    const niveles = [
+      "modulo",
+      "planta",
+      "espacio",
+      "tipo",
+      "subtipo",
+      "numero",
+      "pieza",
+    ] as const;
+    // Filtrar por los niveles anteriores
+    for (let i = 0; i < niveles.length; i++) {
+      const n = niveles[i];
+      if (n === nivel) break;
+      if (prevFilters[n]) {
+        ubicaciones = ubicaciones.filter(
+          (u) =>
+            (u.codigo_Identificacion.split("-")[i] || "") === prevFilters[n]
+        );
+      }
+    }
+    // Obtener opciones únicas para el nivel actual
+    const idx = niveles.indexOf(nivel as (typeof NIVELES)[number]);
+    const opciones = Array.from(
+      new Set(
+        ubicaciones.map((u) => u.codigo_Identificacion.split("-")[idx] || "")
+      )
+    ).filter(Boolean);
+    return opciones;
+  };
+
+  // Filtrar módulos y detalles según los filtros
+  const filteredModulos = React.useMemo(() => {
+    if (!data || !data.data) return [];
+    let ubicaciones = data.data;
+    const niveles = [
+      "modulo",
+      "planta",
+      "espacio",
+      "tipo",
+      "subtipo",
+      "numero",
+      "pieza",
+    ] as const;
+    for (let i = 0; i < niveles.length; i++) {
+      const n = niveles[i];
+      if (filters[n]) {
+        ubicaciones = ubicaciones.filter(
+          (u) => (u.codigo_Identificacion.split("-")[i] || "") === filters[n]
+        );
+      } else {
+        break;
+      }
+    }
+    // Agrupar igual que antes
     const agrupados = ubicaciones.reduce(
       (acc: Record<string, Modulo>, item) => {
-        // Se asume que el módulo es el primer segmento del codigo_Identificacion
         const key = item.codigo_Identificacion.split("-")[0];
         if (!acc[key]) {
           acc[key] = { modulo: key, cantidad: 0, detalles: [] };
@@ -152,7 +221,7 @@ const UbicacionesTecnicas: React.FC = () => {
       {} as Record<string, Modulo>
     );
     return Object.values(agrupados);
-  }, [data]);
+  }, [data, filters]);
 
   if (isLoading)
     return (
@@ -248,13 +317,70 @@ const UbicacionesTecnicas: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Filtros por niveles */}
+      <p className="text-sm text-neutral-800 font-semibold">Filtrar:</p>
+      <div className="flex flex-wrap gap-3 mb-5">
+        {NIVELES.map((nivel, idx) => {
+          // Solo mostrar el siguiente selector si el anterior está seleccionado
+          if (idx > 0 && !filters[NIVELES[idx - 1]]) return null;
+          const opciones = getOptions(nivel, filters);
+          if (!opciones.length) return null;
+          return (
+            <Select
+              value={filters[nivel]}
+              key={nivel}
+              onValueChange={(value) => {
+                setFilters((prev) => {
+                  // Limpiar los niveles siguientes
+                  const updated = { ...prev };
+                  updated[nivel] = value;
+                  for (let i = idx + 1; i < NIVELES.length; i++) {
+                    updated[NIVELES[i]] = "";
+                  }
+                  return updated;
+                });
+              }}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder={`Seleccionar nivel ${idx + 1}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {opciones.map((op) => (
+                  <SelectItem key={op} value={op}>
+                    {op}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        })}
+        {Object.values(filters).some(Boolean) && (
+          <Button
+            variant="outline"
+            onClick={() =>
+              setFilters({
+                modulo: "",
+                planta: "",
+                espacio: "",
+                tipo: "",
+                subtipo: "",
+                numero: "",
+                pieza: "",
+              })
+            }
+          >
+            Limpiar filtros
+          </Button>
+        )}
+      </div>
+
       <Accordion
         type="single"
         collapsible
         className="w-2xl shadow-md mb-2 bg-white rounded-md"
-        defaultValue={modulos[0]?.modulo}
+        defaultValue={filteredModulos[0]?.modulo}
       >
-        {modulos.map((modulo, index) => (
+        {filteredModulos.map((modulo, index) => (
           <AccordionItem key={index} value={modulo.modulo}>
             <AccordionTrigger className="bg-gray-100 hover:bg-gray-200 hover:cursor-pointer px-3">
               <span className="flex items-center gap-2">
