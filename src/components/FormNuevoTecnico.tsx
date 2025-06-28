@@ -60,12 +60,16 @@ const FormNuevoTecnico: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent 
+        className="max-w-md w-full"
+        contentClassName="space-y-2"
+      >
+     
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Técnico</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="Nombre">Nombre</Label>
             <Input
               id="Nombre"
@@ -75,7 +79,7 @@ const FormNuevoTecnico: React.FC<Props> = ({ open, onClose }) => {
             />
             <span className="text-red-600 text-xs">{form.formState.errors.Nombre?.message}</span>
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="correo">Correo institucional</Label>
             <Input
               id="correo"

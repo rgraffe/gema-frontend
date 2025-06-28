@@ -3,9 +3,10 @@ import FormNuevoTecnico from "@/components/FormNuevoTecnico";
 import { useQuery } from "@tanstack/react-query";
 import { getTecnicos } from "@/services/tecnicos";
 import { getAllWorkersInALLGroups, getGruposDeTrabajo } from "@/services/gruposDeTrabajo";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from "@/components/ui/button";
 import type { Tecnico } from "@/types/tecnicos.types";
+import { CirclePlus } from "lucide-react";
 
 interface GrupoTrabajo {
   id: number;
@@ -55,18 +56,21 @@ const Tecnicos = () => {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Técnicos</h1>
-      <button
-        className="mb-4 px-4 py-2 bg-gema-green text-white rounded hover:bg-green-700"
-        onClick={() => setOpen(true)}
-      >
-        Agregar Técnico
-      </button>
-      <FormNuevoTecnico
-        open={open}
-        onClose={() => setOpen(false)}
-      />
+    <div className="p-6 mx-auto">
+      <h1 className="text-2xl font-bold mb-3">Técnicos</h1>
+      
+     <Dialog open={open} onOpenChange={setOpen}>
+       <DialogTrigger asChild>
+         <Button className="mb-5 bg-gema-green hover:bg-green-700">
+           <CirclePlus className="mr-2" />
+           Crear nuevo técnico
+         </Button>
+       </DialogTrigger>
+       <FormNuevoTecnico
+          open={open}
+          onClose={() => setOpen(false)}
+        />
+     </Dialog>
 
         <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200">

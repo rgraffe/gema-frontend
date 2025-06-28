@@ -112,8 +112,8 @@ const GruposTrabajo: React.FC = () => {
         onClick={() => setIsModalOpen(true)}
         className="bg-gema-green hover:bg-green-700 mb-6"
       >
-        <CirclePlus />
-        Crear nuevo
+        <CirclePlus className="mr-2"/>
+        Crear nuevo grupo
       </Button>
 
       <CreateGrupoForm
