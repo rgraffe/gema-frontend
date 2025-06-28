@@ -1,4 +1,4 @@
-import { LogOut, MapPin, UserCircle, Users } from "lucide-react";
+import { LogOut, MapPin, UserCircle, Users, UserPlus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,7 @@ const items = [
     path: "/ubicaciones-tecnicas",
   },
   { icon: Users, label: "Grupos de Trabajo", path: "/grupos" },
+  { icon: UserPlus, label: 'Tecnicos', path:'/tecnicos' },
 ];
 
 export function AppSidebar() {
