@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createTecnico } from "@/services/tecnicos";
 
 // Esquema de validación
 const tecnicoSchema = z.object({
-  nombre: z.string().min(2, "El nombre es requerido"),
-  correo: z
+  Nombre: z.string().min(2, "El nombre es requerido"),
+  Correo: z
     .string()
     .email("Correo inválido")
     .regex(/^[a-zA-Z0-9._%+-]+@ucab\.edu\.ve$/, "Debe ser un correo institucional @ucab.edu.ve"),
@@ -26,18 +27,18 @@ interface Props {
   onCreate?: (data: TecnicoForm) => Promise<any>;
 }
 
-const FormNuevoTecnico: React.FC<Props> = ({ open, onClose, onCreate }) => {
+const FormNuevoTecnico: React.FC<Props> = ({ open, onClose }) => {
   const queryClient = useQueryClient();
   const form = useForm<TecnicoForm>({
     resolver: zodResolver(tecnicoSchema),
     defaultValues: {
-      nombre: "",
-      correo: "",
+      Nombre: "",
+      Correo: "",
     },
   });
 
   const mutation = useMutation({
-    mutationFn: onCreate,
+    mutationFn: createTecnico,
     onSuccess: () => {
       toast.success("Técnico creado exitosamente");
       form.reset();
@@ -61,24 +62,24 @@ const FormNuevoTecnico: React.FC<Props> = ({ open, onClose, onCreate }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="nombre">Nombre</Label>
+            <Label htmlFor="Nombre">Nombre</Label>
             <Input
-              id="nombre"
-              {...form.register("nombre")}
+              id="Nombre"
+              {...form.register("Nombre")}
               placeholder="Ejemplo: Juan Pérez"
               autoComplete="off"
             />
-            <span className="text-red-600 text-xs">{form.formState.errors.nombre?.message}</span>
+            <span className="text-red-600 text-xs">{form.formState.errors.Nombre?.message}</span>
           </div>
           <div>
             <Label htmlFor="correo">Correo institucional</Label>
             <Input
               id="correo"
-              {...form.register("correo")}
+              {...form.register("Correo")}
               placeholder="ejemplo@ucab.edu.ve"
               autoComplete="off"
             />
-            <span className="text-red-600 text-xs">{form.formState.errors.correo?.message}</span>
+            <span className="text-red-600 text-xs">{form.formState.errors.Correo?.message}</span>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" type="button" onClick={onClose}>
