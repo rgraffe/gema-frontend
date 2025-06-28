@@ -5,20 +5,33 @@ import { getTecnicos } from "@/services/tecnicos";
 import { getAllWorkersInALLGroups, getGruposDeTrabajo } from "@/services/gruposDeTrabajo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import type { Tecnico } from "@/types/tecnicos.types";
+
+interface GrupoTrabajo {
+  id: number;
+  codigo: string;
+  nombre: string;
+  supervisorId: number | null;
+}
+
+interface TrabajaEnGrupo {
+  grupoDeTrabajoId: number;
+  usuarios: Tecnico[];
+}
 
 const Tecnicos = () => {
   const [open, setOpen] = useState(false);
   const [modalTecnicoId, setModalTecnicoId] = useState<number | null>(null);
 
-  const tecnicos = useQuery({ queryKey: ["tecnicos"], queryFn: getTecnicos });
-  const grupos = useQuery({queryKey: ["gruposDeTrabajo"], queryFn: getGruposDeTrabajo});
+  const tecnicos = useQuery<{ data: Tecnico[] }>({ queryKey: ["tecnicos"], queryFn: getTecnicos });
+  const grupos = useQuery<{ data: GrupoTrabajo[] }>({queryKey: ["gruposDeTrabajo"], queryFn: getGruposDeTrabajo});
   const trabajadoresPorGrupo = useQuery({
     queryKey: ["trabajadoresPorGrupo"],
     queryFn: getAllWorkersInALLGroups,
-    select: (data) => {
+    select: (data: {data: TrabajaEnGrupo[] }) => {
         // Mapea la respuesta a un objeto { grupoId: usuarios [] }
-        const map: Record<number, any[]> = {};
-        data.data.forEach((item: any) => {
+        const map: Record<number, Tecnico[]> = {};
+        data.data.forEach((item) => {
             map[item.grupoDeTrabajoId] = item.usuarios;
         });
         return map;
@@ -30,12 +43,12 @@ const Tecnicos = () => {
   }
 
   // Mapeo: técnicoId -> array de grupos a los que pertenece
-  const tecnicoGruposMap: Record<number, any[]> = {};
-  if (trabajadoresPorGrupo.data) {
+  const tecnicoGruposMap: Record<number, GrupoTrabajo[]> = {};
+  if (trabajadoresPorGrupo.data && grupos.data) {
     Object.entries(trabajadoresPorGrupo.data).forEach(([grupoId, usuarios]) => {
-      usuarios.forEach((usuario: any) => {
+      usuarios.forEach((usuario) => {
         if (!tecnicoGruposMap[usuario.Id]) tecnicoGruposMap[usuario.Id] = [];
-        const grupo = grupos.data?.data?.find((g: any) => g.id === Number(grupoId));
+        const grupo = grupos.data?.data?.find((g) => g.id === Number(grupoId));
         if (grupo) tecnicoGruposMap[usuario.Id].push(grupo);
       });
     });
@@ -65,7 +78,7 @@ const Tecnicos = () => {
             </tr>
           </thead>
           <tbody>
-            {tecnicos.data?.data?.map((tecnico: any) => (
+            {tecnicos.data?.data?.map((tecnico) => (
               <tr key={tecnico.Id}>
                 <td className="px-6 py-4">{tecnico.Nombre}</td>
                 <td className="px-6 py-4">{tecnico.Correo}</td>

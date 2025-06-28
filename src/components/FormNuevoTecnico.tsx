@@ -24,7 +24,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   // Puedes pasar una función para crear el técnico, o usar tu propio hook/mutation
-  onCreate?: (data: TecnicoForm) => Promise<any>;
+  onCreate?: (data: TecnicoForm) => Promise<unknown>;
 }
 
 const FormNuevoTecnico: React.FC<Props> = ({ open, onClose }) => {
@@ -45,8 +45,12 @@ const FormNuevoTecnico: React.FC<Props> = ({ open, onClose }) => {
       onClose();
       queryClient.invalidateQueries({ queryKey: ["tecnicos"] });
     },
-    onError: (error: any) => {
-      toast.error(error?.message || "Error al crear el técnico");
+    onError: (error: unknown) => {
+      if (error instanceof Error){
+        toast.error(error?.message || "Error al crear el técnico");
+      } else {
+        toast.error("Error al crear el técnico");
+      }
     },
   });
 
