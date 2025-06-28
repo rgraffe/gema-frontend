@@ -72,72 +72,83 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <Card className="md:w-96 w-2/3">
-        <CardHeader>
-          <div className="flex flex-1 justify-center items-center gap-2 pb-1">
-            <img src="/gema-icono2.png" width="64" />
-            <h1 className="text-3xl font-bold mr-4 text-neutral-700">GEMA</h1>
-          </div>
-          <hr className="pb-2"></hr>
-          <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...loginForm}>
-            <form
-              className="space-y-4"
-              onSubmit={loginForm.handleSubmit(onSubmit)}
-            >
-              <FormField
-                control={loginForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correo institucional</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ingrese su correo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={loginForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Ingrese su contraseña"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {isError && (
-                <p className="text-red-600 text-sm mt-2">
-                  {error instanceof Error
-                    ? error.message
-                    : "Ocurrió un error, por favor intente de nuevo."}
-                </p>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-gema-green hover:bg-green-600 text-black font-semibold mt-2"
+    <div className="relative min-h-screen flex items-center justify-center">
+      {/* Fondo de la imagen */}
+      <div
+        className="absolute inset-0 z-0 bg-center bg-no-repeat bg-cover"
+        style={{
+          backgroundImage: "url('/UCAB-Guayana.webp')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          filter: "brightness(0.8) blur(0px)",
+        }}
+      />
+      {/* Contenido */}
+      <div className="relative z-20 flex items-center justify-center w-full min-h-screen">
+        <Card className="md:w-96 w-2/3 shadow-xl">
+          <CardHeader>
+            <div className="flex flex-1 justify-center items-center gap-2 pb-1">
+              <img src="/gema-icono2.png" width="64" />
+              <h1 className="text-3xl font-bold mr-4 text-neutral-700">GEMA</h1>
+            </div>
+            <hr className="pb-2"></hr>
+            <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...loginForm}>
+              <form
+                className="space-y-4"
+                onSubmit={loginForm.handleSubmit(onSubmit)}
               >
-                Ingresar
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <FormField
+                  control={loginForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Correo institucional</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ingrese su correo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contraseña</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Ingrese su contraseña"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {isError && (
+                  <p className="text-red-600 text-sm mt-2">
+                    {error instanceof Error
+                      ? error.message
+                      : "Ocurrió un error, por favor intente de nuevo."}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full bg-gema-green hover:bg-green-600 text-black font-semibold mt-2"
+                >
+                  Ingresar
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
