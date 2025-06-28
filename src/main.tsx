@@ -12,6 +12,7 @@ import Canva from "./pages/Canva";
 import UbicacionesTecnicas from "./pages/UbicacionesTecnicas";
 import GruposTrabajo from "./components/GruposTrabajo";
 import { Toaster } from "./components/ui/sonner";
+import Tecnicos from "./pages/Tecnicos";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
         path: "grupos",
         element: <GruposTrabajo />,
       },
+      {
+        path: "tecnicos",
+        element: <Tecnicos />
+      }
     ],
   },
 ]);
