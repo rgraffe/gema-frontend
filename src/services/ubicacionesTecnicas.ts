@@ -1,9 +1,9 @@
 import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
 
 /**
- * Obtiene todas las ubicaciones técnicas.
+ * Obtiene todas las ubicaciones técnicas en forma jerárquica.
  * @throws {Error} Si falla la petición.
- * @returns La respuesta del backend en formato JSON.
+ * @returns La respuesta del backend en formato JSON, que debe tener la estructura jerárquica.
  */
 export async function getUbicacionesTecnicas() {
   const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -22,7 +22,8 @@ export async function getUbicacionesTecnicas() {
         "Error al obtener las ubicaciones técnicas, por favor intente de nuevo."
     );
   }
-  const data = (await resp.json()) as { data: UbicacionTecnica[] };
+  // El backend retorna directamente los nodos raíz que incluyen sus hijos en "children"
+  const data = await resp.json() as { data: UbicacionTecnica[] };
   return data;
 }
 

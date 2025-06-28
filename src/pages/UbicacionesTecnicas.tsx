@@ -36,19 +36,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface DetalleUbicacion {
-  idUbicacion: number;
-  codigo: string;
-  descripcion: string;
-  nivel: number;
-}
-
-interface Modulo {
-  modulo: string;
-  cantidad: number;
-  detalles: DetalleUbicacion[];
-}
-
 const NIVELES = [
   "modulo",
   "planta",
@@ -59,11 +46,80 @@ const NIVELES = [
   "pieza",
 ] as const;
 
+// Componente recursivo para renderizar la jerarquía de ubicaciones
+const UbicacionHierarchy: React.FC<{
+  ubicaciones: UbicacionTecnica[];
+  onEdit: (codigo: string) => void;
+  onDelete: (detalle: UbicacionTecnica) => void;
+}> = ({ ubicaciones, onEdit, onDelete }) => {
+  return (
+    <>
+      {ubicaciones.map((ubicacion) => (
+        <div key={ubicacion.idUbicacion}>
+          <div className="flex px-4 py-2 bg-white hover:bg-gray-50 items-center">
+            <div className="flex-3/5 flex flex-row items-center gap-2">
+              <div style={{ paddingLeft: `${(ubicacion.nivel - 1) * 20}px` }}>
+                {ubicacion.nivel > 1 && (
+                  <CornerDownRight size={18} className="text-gray-400" />
+                )}
+              </div>
+              <div>
+                <p className="font-mono font-semibold text-sm">
+                  {ubicacion.codigo_Identificacion}
+                </p>
+                <p className="text-sm text-gray-700">{ubicacion.descripcion}</p>
+              </div>
+            </div>
+            <div className="flex flex-2/5 items-center justify-end gap-1 ml-auto">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="text-gray-500 !px-2"
+                    onClick={() => onEdit(ubicacion.codigo_Identificacion)}
+                  >
+                    <CirclePlus />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Crear ubicación a partir de esta</span>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="text-red-500 !px-2 hover:text-red-600"
+                    onClick={() => onDelete(ubicacion)}
+                  >
+                    <Trash />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Eliminar ubicación</span>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+          {/* Llamada recursiva para los hijos */}
+          {ubicacion.children && ubicacion.children.length > 0 && (
+            <UbicacionHierarchy
+              ubicaciones={ubicacion.children}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          )}
+        </div>
+      ))}
+    </>
+  );
+};
+
 const UbicacionesTecnicas: React.FC = () => {
   // Estado de diálogos
   const [open, setOpen] = useState(false);
   const [borrarUbicacion, setBorrarUbicacion] =
-    useState<DetalleUbicacion | null>(null);
+    useState<UbicacionTecnica | null>(null);
 
   // Dependencias de la ubicación a eliminar
   const dependencias = useQuery({
@@ -89,26 +145,12 @@ const UbicacionesTecnicas: React.FC = () => {
   const initializeFormValues = (codigo: string) => {
     // Extraer los niveles del código de identificación
     const nivelesExtraidos = codigo.split("-");
-    const valoresIniciales = {
-      modulo: "",
-      planta: "",
-      espacio: "",
-      tipo: "",
-      subtipo: "",
-      numero: "",
-      pieza: "",
-      descripcion: "",
-    };
-
-    // Asignar los valores a los campos correspondientes
+    const valoresIniciales = { ...formValues };
     let levelAmount = 0;
     NIVELES.forEach((nivel, index) => {
       valoresIniciales[nivel] = nivelesExtraidos[index] || "";
-      if (nivelesExtraidos[index]) {
-        levelAmount++;
-      }
+      if (nivelesExtraidos[index]) levelAmount++;
     });
-
     // Actualizar el estado del formulario con los valores extraídos
     setFormValues(valoresIniciales);
     setDisplayedLevels(levelAmount + 1);
@@ -130,9 +172,7 @@ const UbicacionesTecnicas: React.FC = () => {
       setBorrarUbicacion(null);
       toast.success("Ubicación técnica eliminada correctamente");
     },
-    onError: () => {
-      toast.error(`Error al eliminar ubicación técnica`);
-    },
+    onError: () => toast.error(`Error al eliminar ubicación técnica`),
   });
 
   const [filters, setFilters] = useState({
@@ -145,22 +185,26 @@ const UbicacionesTecnicas: React.FC = () => {
     pieza: "",
   });
 
-  // Obtener opciones únicas para cada nivel según el filtro anterior
+  const flatUbicaciones = React.useMemo(() => {
+    if (!data?.data) return [];
+    const flatten = (nodes: UbicacionTecnica[]): UbicacionTecnica[] => {
+      let list: UbicacionTecnica[] = [];
+      for (const node of nodes) {
+        const { children, ...rest } = node;
+        list.push(rest as UbicacionTecnica);
+        if (children && children.length > 0) {
+          list = list.concat(flatten(children));
+        }
+      }
+      return list;
+    };
+    return flatten(data.data);
+  }, [data]);
+
   const getOptions = (nivel: string, prevFilters: typeof filters) => {
-    if (!data || !data.data) return [];
-    let ubicaciones = data.data;
-    const niveles = [
-      "modulo",
-      "planta",
-      "espacio",
-      "tipo",
-      "subtipo",
-      "numero",
-      "pieza",
-    ] as const;
-    // Filtrar por los niveles anteriores
-    for (let i = 0; i < niveles.length; i++) {
-      const n = niveles[i];
+    let ubicaciones = flatUbicaciones;
+    for (let i = 0; i < NIVELES.length; i++) {
+      const n = NIVELES[i];
       if (n === nivel) break;
       if (prevFilters[n]) {
         ubicaciones = ubicaciones.filter(
@@ -169,59 +213,43 @@ const UbicacionesTecnicas: React.FC = () => {
         );
       }
     }
-    // Obtener opciones únicas para el nivel actual
-    const idx = niveles.indexOf(nivel as (typeof NIVELES)[number]);
-    const opciones = Array.from(
+    const idx = NIVELES.indexOf(nivel as (typeof NIVELES)[number]);
+    return Array.from(
       new Set(
         ubicaciones.map((u) => u.codigo_Identificacion.split("-")[idx] || "")
       )
     ).filter(Boolean);
-    return opciones;
   };
 
-  // Filtrar módulos y detalles según los filtros
-  const filteredModulos = React.useMemo(() => {
-    if (!data || !data.data) return [];
-    let ubicaciones = data.data;
-    const niveles = [
-      "modulo",
-      "planta",
-      "espacio",
-      "tipo",
-      "subtipo",
-      "numero",
-      "pieza",
-    ] as const;
-    for (let i = 0; i < niveles.length; i++) {
-      const n = niveles[i];
-      if (filters[n]) {
-        ubicaciones = ubicaciones.filter(
-          (u) => (u.codigo_Identificacion.split("-")[i] || "") === filters[n]
+  const filteredData = React.useMemo(() => {
+    if (!data?.data) return [];
+    if (!Object.values(filters).some(Boolean)) return data.data;
+
+    const filterTree = (nodes: UbicacionTecnica[]): UbicacionTecnica[] => {
+      return nodes.reduce((acc, node) => {
+        const children = node.children ? filterTree(node.children) : [];
+        const parts = node.codigo_Identificacion.split("-");
+        const selfMatch = NIVELES.every(
+          (nivel, idx) => !filters[nivel] || parts[idx] === filters[nivel]
         );
-      } else {
-        break;
-      }
-    }
-    // Agrupar igual que antes
-    const agrupados = ubicaciones.reduce(
-      (acc: Record<string, Modulo>, item) => {
-        const key = item.codigo_Identificacion.split("-")[0];
-        if (!acc[key]) {
-          acc[key] = { modulo: key, cantidad: 0, detalles: [] };
+
+        if (selfMatch || children.length > 0) {
+          acc.push({ ...node, children });
         }
-        acc[key].cantidad += 1;
-        acc[key].detalles.push({
-          idUbicacion: item.idUbicacion,
-          codigo: item.codigo_Identificacion,
-          descripcion: item.descripcion,
-          nivel: item.nivel,
-        });
         return acc;
-      },
-      {} as Record<string, Modulo>
-    );
-    return Object.values(agrupados);
+      }, [] as UbicacionTecnica[]);
+    };
+
+    return filterTree(data.data);
   }, [data, filters]);
+
+  const countChildren = (node: UbicacionTecnica): number => {
+    if (!node.children || node.children.length === 0) return 0;
+    return (
+      node.children.length +
+      node.children.reduce((sum, child) => sum + countChildren(child), 0)
+    );
+  };
 
   if (isLoading)
     return (
@@ -268,7 +296,8 @@ const UbicacionesTecnicas: React.FC = () => {
                 <b>Nombre de la ubicación:</b> {borrarUbicacion?.descripcion}
               </li>
               <li className="text-neutral-700 text-sm">
-                <b>Código de identificación:</b> {borrarUbicacion?.codigo}
+                <b>Código de identificación:</b>{" "}
+                {borrarUbicacion?.codigo_Identificacion}
               </li>
             </ul>
             <p className="text-neutral-700 text-sm pt-4">
@@ -318,7 +347,7 @@ const UbicacionesTecnicas: React.FC = () => {
       </Dialog>
 
       {/* Filtros por niveles */}
-      {!!data?.data.length && (
+      {!!flatUbicaciones.length && (
         <p className="text-sm text-neutral-800 font-semibold">Filtrar:</p>
       )}
       <div className="flex flex-wrap gap-3 mb-5">
@@ -336,9 +365,8 @@ const UbicacionesTecnicas: React.FC = () => {
                   // Limpiar los niveles siguientes
                   const updated = { ...prev };
                   updated[nivel] = value;
-                  for (let i = idx + 1; i < NIVELES.length; i++) {
+                  for (let i = idx + 1; i < NIVELES.length; i++)
                     updated[NIVELES[i]] = "";
-                  }
                   return updated;
                 });
               }}
@@ -380,77 +408,30 @@ const UbicacionesTecnicas: React.FC = () => {
         type="single"
         collapsible
         className="w-2xl shadow-md mb-2 bg-white rounded-md"
-        defaultValue={filteredModulos[0]?.modulo}
+        defaultValue={filteredData[0]?.codigo_Identificacion}
       >
-        {filteredModulos.map((modulo, index) => (
-          <AccordionItem key={index} value={modulo.modulo}>
+        {filteredData.map((ubicacion) => (
+          <AccordionItem
+            key={ubicacion.idUbicacion}
+            value={ubicacion.codigo_Identificacion}
+          >
             <AccordionTrigger className="bg-gray-100 hover:bg-gray-200 hover:cursor-pointer px-3">
               <span className="flex items-center gap-2">
                 <Building className="text-blue-600 w-5 h-5" />
-                <span className="text-lg font-semibold">{modulo.modulo}</span>
+                <span className="text-lg font-semibold">
+                  {ubicacion.codigo_Identificacion}
+                </span>
                 <span className="bg-gray-200 text-xs font-medium px-2 py-0.5 rounded-full ml-2 text-neutral-600">
-                  {modulo.cantidad} ubicaciones
+                  {1 + countChildren(ubicacion)} ubicaciones
                 </span>
               </span>
             </AccordionTrigger>
             <AccordionContent>
-              {modulo.detalles.map((detalle, idx) => (
-                <div
-                  key={idx}
-                  className="flex px-4 py-2 bg-white hover:bg-gray-50"
-                >
-                  <div className="flex-3/5 flex flex-row gap-2">
-                    {detalle.nivel > 1 && (
-                      <div className="flex gap-0">
-                        {detalle.nivel > 2 && (
-                          <div
-                            style={{ width: `${(detalle.nivel - 2) * 16}px` }}
-                          ></div>
-                        )}
-                        <CornerDownRight size={18} />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-mono font-semibold text-sm">
-                        {detalle.codigo}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        {detalle.descripcion}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-2/5 items-center justify-end gap-1">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Button
-                          variant="ghost"
-                          className="text-gray-500 !px-2"
-                          onClick={() => initializeFormValues(detalle.codigo)}
-                        >
-                          <CirclePlus />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <span>Crear ubicación a partir de esta</span>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Button
-                          variant="ghost"
-                          className="text-red-500 !px-2 hover:text-red-600"
-                          onClick={() => setBorrarUbicacion(detalle)}
-                        >
-                          <Trash />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <span>Eliminar ubicación</span>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-              ))}
+              <UbicacionHierarchy
+                ubicaciones={[ubicacion]}
+                onEdit={initializeFormValues}
+                onDelete={setBorrarUbicacion}
+              />
             </AccordionContent>
           </AccordionItem>
         ))}
