@@ -220,6 +220,31 @@ export async function deleteUbicacionTecnica(id: number) {
 }
 
 /**
+ * Obtiene los padres directos de una ubicación técnica.
+ * @param {number} idHijo El ID de la ubicación para la que se buscan los padres.
+ * @returns La respuesta del backend con la lista de padres.
+ */
+export async function getPadresDeUbicacion(idHijo: number) {
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+  const token = localStorage.getItem("authToken");
+  const resp = await fetch(`${BASE_URL}/ubicaciones-tecnicas/padres/${idHijo}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(
+      data.error ||
+        "Error al obtener los padres de la ubicación, por favor intente de nuevo."
+    );
+  }
+  return resp.json();
+}
+
+/**
  * Obtiene las ubicaciones técnicas de un nivel específico.
  * @author gabrielm
  * @param nivel
