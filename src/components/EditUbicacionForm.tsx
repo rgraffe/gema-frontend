@@ -1,34 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
 import { getUbicacionesTecnicas, updateUbicacionTecnica } from "@/services/ubicacionesTecnicas";
 import { toast } from "sonner";
 
 interface EditUbicacionProps {
   open: boolean;
   onClose: () => void;
+  idUbicacion: number; // ✅ Agregado para corregir error
 }
 
-const EditUbicacionForm: React.FC<EditUbicacionProps> = ({ open, onClose }) => {
+const EditUbicacionForm: React.FC<EditUbicacionProps> = ({ open, onClose, idUbicacion }) => {
   const queryClient = useQueryClient();
-  const [selectedUbicacionId, setSelectedUbicacionId] = useState<number | null>(null);
   const [descripcion, setDescripcion] = useState("");
 
-  const { data: ubicaciones, isLoading: loadingUbicaciones } = useQuery({
-    queryKey: ["ubicacionesTecnicas"],
-    queryFn: getUbicacionesTecnicas,
-    staleTime: 1000 * 60 * 5, // 5 minutos para evitar recargas innecesarias
-  });
+  // Obtener datos actuales de la ubicación
+  // Obtener datos actuales de la ubicación
+const { data: ubicaciones, isLoading } = useQuery({
+  queryKey: ["ubicacionesTecnicas"],
+  queryFn: getUbicacionesTecnicas,
+  staleTime: 1000 * 60 * 5,
+});
 
-  const ubicacionesOptions =
-    ubicaciones?.data?.map((u: any) => ({
-      value: u.idUbicacion.toString(),
-      label: `${u.codigo_Identificacion} - ${u.descripcion}`,
-    })) ?? [];
+if (isLoading) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <p className="text-center">Cargando ubicación...</p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+  // Cargar descripción automáticamente al abrir modal
+  useEffect(() => {
+    if (ubicaciones?.data && idUbicacion) {
+      const ubicacion = ubicaciones.data.find((u: any) => u.idUbicacion === idUbicacion);
+      setDescripcion(ubicacion?.descripcion || "");
+    }
+  }, [idUbicacion, ubicaciones]);
 
   const { mutate, status } = useMutation({
     mutationFn: ({ id, descripcion }: { id: number; descripcion: string }) =>
@@ -44,8 +58,8 @@ const EditUbicacionForm: React.FC<EditUbicacionProps> = ({ open, onClose }) => {
   });
 
   const onSubmit = () => {
-    if (selectedUbicacionId && descripcion.trim()) {
-      mutate({ id: selectedUbicacionId, descripcion });
+    if (descripcion.trim()) {
+      mutate({ id: idUbicacion, descripcion });
     }
   };
 
@@ -55,20 +69,6 @@ const EditUbicacionForm: React.FC<EditUbicacionProps> = ({ open, onClose }) => {
         <h2 className="text-lg font-semibold mb-4">Editar Ubicación</h2>
 
         <div className="space-y-4">
-          <div>
-            <Label>Selecciona la ubicación</Label>
-            <Combobox
-              data={ubicacionesOptions}
-              value={selectedUbicacionId?.toString() || null}
-              onValueChange={(value) => {
-                const id = Number(value);
-                setSelectedUbicacionId(id);
-                const selected = ubicaciones?.data.find((u: any) => u.idUbicacion === id);
-                setDescripcion(selected?.descripcion || "");
-              }}
-            />
-          </div>
-
           <div>
             <Label>Descripción</Label>
             <Input
@@ -85,7 +85,7 @@ const EditUbicacionForm: React.FC<EditUbicacionProps> = ({ open, onClose }) => {
           </Button>
           <Button
             onClick={onSubmit}
-            disabled={!selectedUbicacionId || !descripcion.trim() || status === "pending"}
+            disabled={!descripcion.trim() || status === "pending"}
             className="bg-gema-green text-white hover:bg-green-700"
           >
             {status === "pending" ? "Actualizando..." : "Actualizar"}

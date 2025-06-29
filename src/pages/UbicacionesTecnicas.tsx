@@ -143,18 +143,17 @@ const UbicacionesTecnicas: React.FC = () => {
     );
   if (error) return <div>Error al obtener ubicaciones técnicas</div>;
 
-  // Función para abrir modal edición con datos cargados
   const handleEditarClick = (detalle: DetalleUbicacion) => {
     setUbicacionParaEditar(detalle);
     setIsEditFormOpen(true);
   };
 
-  // Cuando se cierra el formulario editar, limpiamos estado y recargamos lista
   const handleCerrarEditar = () => {
     setIsEditFormOpen(false);
     setUbicacionParaEditar(null);
-    queryClient.invalidateQueries(["ubicacionesTecnicas"]);
+    queryClient.invalidateQueries({ queryKey: ["ubicacionesTecnicas"] }); 
   };
+
 
   return (
     <div className="p-6 mx-auto">
