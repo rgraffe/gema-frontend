@@ -6,3 +6,7 @@ export type UbicacionTecnica = {
   nivel: number;
   children?: UbicacionTecnica[];
 };
+
+export type PadreUbicacion = UbicacionTecnica & {
+  esUbicacionFisica?: boolean;
+};

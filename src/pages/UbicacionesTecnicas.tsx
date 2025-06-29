@@ -6,6 +6,8 @@ import {
   LoaderCircle,
   Trash,
   CornerDownRight,
+  Eye,
+  EyeOff, // Importar el ícono del ojo cerrado
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
@@ -14,6 +16,7 @@ import {
   deleteUbicacionTecnica,
   getUbicacionesDependientes,
   getUbicacionesTecnicas,
+  getPadresDeUbicacion, // Importar el nuevo servicio
 } from "@/services/ubicacionesTecnicas";
 import {
   Tooltip,
@@ -27,7 +30,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
+import type {
+  UbicacionTecnica,
+  PadreUbicacion,
+} from "@/types/ubicacionesTecnicas.types";
 import {
   Select,
   SelectContent,
@@ -51,66 +57,87 @@ const UbicacionHierarchy: React.FC<{
   ubicaciones: UbicacionTecnica[];
   onEdit: (codigo: string) => void;
   onDelete: (detalle: UbicacionTecnica) => void;
-}> = ({ ubicaciones, onEdit, onDelete }) => {
+  onViewDetails: (detalle: UbicacionTecnica | null) => void; // Acepta null para cerrar
+  activeDetailItem: UbicacionTecnica | null; // Prop para saber qué item está activo
+}> = ({ ubicaciones, onEdit, onDelete, onViewDetails, activeDetailItem }) => {
   return (
     <>
-      {ubicaciones.map((ubicacion) => (
-        <div key={ubicacion.idUbicacion}>
-          <div className="flex px-4 py-2 bg-white hover:bg-gray-50 items-center">
-            <div className="flex-3/5 flex flex-row items-center gap-2">
-              <div style={{ paddingLeft: `${(ubicacion.nivel - 1) * 20}px` }}>
-                {ubicacion.nivel > 1 && (
-                  <CornerDownRight size={18} className="text-gray-400" />
-                )}
+      {ubicaciones.map((ubicacion) => {
+        const isViewing = activeDetailItem?.idUbicacion === ubicacion.idUbicacion;
+        return (
+          <div key={ubicacion.idUbicacion}>
+            <div className="flex px-4 py-2 bg-white hover:bg-gray-50 items-center">
+              <div className="flex-3/5 flex flex-row items-center gap-2">
+                <div style={{ paddingLeft: `${(ubicacion.nivel - 1) * 20}px` }}>
+                  {ubicacion.nivel > 1 && (
+                    <CornerDownRight size={18} className="text-gray-400" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-mono font-semibold text-sm">
+                    {ubicacion.codigo_Identificacion}
+                  </p>
+                  <p className="text-sm text-gray-700">{ubicacion.descripcion}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-mono font-semibold text-sm">
-                  {ubicacion.codigo_Identificacion}
-                </p>
-                <p className="text-sm text-gray-700">{ubicacion.descripcion}</p>
+              <div className="flex flex-2/5 items-center justify-end gap-1 ml-auto">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="text-blue-600 !px-2"
+                      onClick={() => onViewDetails(isViewing ? null : ubicacion)}
+                    >
+                      {isViewing ? <EyeOff /> : <Eye />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>{isViewing ? "Cerrar detalles" : "Ver detalles"}</span>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="text-gray-500 !px-2"
+                      onClick={() => onEdit(ubicacion.codigo_Identificacion)}
+                    >
+                      <CirclePlus />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>Crear ubicación a partir de esta</span>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="text-red-500 !px-2 hover:text-red-600"
+                      onClick={() => onDelete(ubicacion)}
+                    >
+                      <Trash />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>Eliminar ubicación</span>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
-            <div className="flex flex-2/5 items-center justify-end gap-1 ml-auto">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="text-gray-500 !px-2"
-                    onClick={() => onEdit(ubicacion.codigo_Identificacion)}
-                  >
-                    <CirclePlus />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>Crear ubicación a partir de esta</span>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="text-red-500 !px-2 hover:text-red-600"
-                    onClick={() => onDelete(ubicacion)}
-                  >
-                    <Trash />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>Eliminar ubicación</span>
-                </TooltipContent>
-              </Tooltip>
-            </div>
+            {/* Llamada recursiva para los hijos */}
+            {ubicacion.children && ubicacion.children.length > 0 && (
+              <UbicacionHierarchy
+                ubicaciones={ubicacion.children}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onViewDetails={onViewDetails}
+                activeDetailItem={activeDetailItem} // Pasar la prop recursivamente
+              />
+            )}
           </div>
-          {/* Llamada recursiva para los hijos */}
-          {ubicacion.children && ubicacion.children.length > 0 && (
-            <UbicacionHierarchy
-              ubicaciones={ubicacion.children}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 };
@@ -120,6 +147,14 @@ const UbicacionesTecnicas: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [borrarUbicacion, setBorrarUbicacion] =
     useState<UbicacionTecnica | null>(null);
+  const [verDetalle, setVerDetalle] = useState<UbicacionTecnica | null>(null);
+
+  // Query para obtener los padres de la ubicación seleccionada para ver detalles
+  const { data: padresData, isLoading: isLoadingPadres } = useQuery({
+    queryKey: ["padresUbicacion", verDetalle?.idUbicacion],
+    queryFn: () => getPadresDeUbicacion(verDetalle!.idUbicacion),
+    enabled: !!verDetalle,
+  });
 
   // Dependencias de la ubicación a eliminar
   const dependencias = useQuery({
@@ -280,6 +315,62 @@ const UbicacionesTecnicas: React.FC = () => {
         />
       </Dialog>
 
+      {/* Diálogo para ver detalles de la ubicación */}
+      <Dialog
+        open={!!verDetalle}
+        onOpenChange={(isOpen) => !isOpen && setVerDetalle(null)}
+      >
+        <DialogContent className="min-w-xl">
+          <div>
+            <h2 className="font-semibold text-lg text-center mb-3">
+              Detalles de la Ubicación
+            </h2>
+            {verDetalle && (
+              <ul className="mt-3 list-disc px-3 space-y-2">
+                <li className="text-neutral-700 text-sm">
+                  <b>Código:</b> {verDetalle.codigo_Identificacion}
+                </li>
+                <li className="text-neutral-700 text-sm">
+                  <b>Descripción:</b> {verDetalle.descripcion}
+                </li>
+              </ul>
+            )}
+            <h3 className="font-semibold text-md mt-4 mb-2">Padres</h3>
+            {isLoadingPadres ? (
+              <LoaderCircle className="animate-spin mx-auto mt-3" />
+            ) : padresData?.data?.length > 0 ? (
+              <ul className="mt-3 list-disc px-3 space-y-2">
+                {padresData.data.map((padre: PadreUbicacion) => (
+                  <li
+                    key={padre.idUbicacion}
+                    className="text-neutral-700 text-sm"
+                  >
+                    {padre.codigo_Identificacion} - {padre.descripcion}
+                    {padre.esUbicacionFisica && (
+                      <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        Ubicación Física
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-center text-sm text-neutral-700 mt-3">
+                Esta ubicación no tiene padres asignados.
+              </p>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setVerDetalle(null)}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={!!borrarUbicacion}
         onOpenChange={(open) => {
@@ -431,6 +522,8 @@ const UbicacionesTecnicas: React.FC = () => {
                 ubicaciones={[ubicacion]}
                 onEdit={initializeFormValues}
                 onDelete={setBorrarUbicacion}
+                onViewDetails={setVerDetalle}
+                activeDetailItem={verDetalle}
               />
             </AccordionContent>
           </AccordionItem>
