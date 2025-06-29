@@ -55,7 +55,7 @@ export async function getUbicacionesDependientes(id: number, nivel?: number) {
         "Error al obtener ubicaciones dependientes, por favor intente de nuevo."
     );
   }
-  return resp.json();
+  return resp.json() as Promise<{ data: UbicacionTecnica[] }>;
 }
 
 /**
