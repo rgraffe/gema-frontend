@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CirclePlus, Building, LoaderCircle, Trash } from "lucide-react";
+import { CirclePlus, Building, LoaderCircle, Trash, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
 import { Button } from "@/components/ui/button";
+import EditUbicacionForm from "@/components/EditUbicacionForm";
+
 import {
   deleteUbicacionTecnica,
   getUbicacionesDependientes,
@@ -46,20 +48,18 @@ const NIVELES = [
 ] as const;
 
 const UbicacionesTecnicas: React.FC = () => {
-  // Estado de diálogos
-  const [open, setOpen] = useState(false);
-  const [borrarUbicacion, setBorrarUbicacion] =
-    useState<DetalleUbicacion | null>(null);
+  // Estados para modales
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [ubicacionParaEditar, setUbicacionParaEditar] = useState<DetalleUbicacion | null>(null);
+  const [open, setOpen] = useState(false); // modal crear nueva
+  const [borrarUbicacion, setBorrarUbicacion] = useState<DetalleUbicacion | null>(null);
 
-  // Dependencias de la ubicación a eliminar
   const dependencias = useQuery({
-    queryFn: () =>
-      getUbicacionesDependientes(borrarUbicacion?.idUbicacion || 0),
+    queryFn: () => getUbicacionesDependientes(borrarUbicacion?.idUbicacion || 0),
     queryKey: ["ubicacionesDependientes", borrarUbicacion?.idUbicacion],
     enabled: !!borrarUbicacion,
   });
 
-  // Estado para crear ubicación
   const [formValues, setFormValues] = useState({
     modulo: "",
     planta: "",
@@ -73,7 +73,6 @@ const UbicacionesTecnicas: React.FC = () => {
   const [displayedLevels, setDisplayedLevels] = useState<number>(1);
 
   const initializeFormValues = (codigo: string) => {
-    // Extraer los niveles del código de identificación
     const nivelesExtraidos = codigo.split("-");
     const valoresIniciales = {
       modulo: "",
@@ -85,23 +84,16 @@ const UbicacionesTecnicas: React.FC = () => {
       pieza: "",
       descripcion: "",
     };
-
-    // Asignar los valores a los campos correspondientes
     let levelAmount = 0;
     NIVELES.forEach((nivel, index) => {
       valoresIniciales[nivel] = nivelesExtraidos[index] || "";
-      if (nivelesExtraidos[index]) {
-        levelAmount++;
-      }
+      if (nivelesExtraidos[index]) levelAmount++;
     });
-
-    // Actualizar el estado del formulario con los valores extraídos
     setFormValues(valoresIniciales);
     setDisplayedLevels(levelAmount + 1);
     setOpen(true);
   };
 
-  // Usamos useQuery para llamar al servicio getUbicacionesTecnicas
   const { data, error, isLoading } = useQuery({
     queryKey: ["ubicacionesTecnicas"],
     queryFn: getUbicacionesTecnicas,
@@ -121,14 +113,11 @@ const UbicacionesTecnicas: React.FC = () => {
     },
   });
 
-  // Agrupar ubicaciones por el primer segmento del campo codigo_Identificacion (Nivel 1)
   const modulos: Modulo[] = React.useMemo(() => {
-    // Se espera que el servicio retorne un objeto con la propiedad 'data' que contiene el arreglo de ubicaciones
     if (!data || !data.data) return [];
     const ubicaciones = data.data;
     const agrupados = ubicaciones.reduce(
       (acc: Record<string, Modulo>, item: any) => {
-        // Se asume que el módulo es el primer segmento del codigo_Identificacion
         const key = item.codigo_Identificacion.split("-")[0];
         if (!acc[key]) {
           acc[key] = { modulo: key, cantidad: 0, detalles: [] };
@@ -153,6 +142,19 @@ const UbicacionesTecnicas: React.FC = () => {
       </div>
     );
   if (error) return <div>Error al obtener ubicaciones técnicas</div>;
+
+  // Función para abrir modal edición con datos cargados
+  const handleEditarClick = (detalle: DetalleUbicacion) => {
+    setUbicacionParaEditar(detalle);
+    setIsEditFormOpen(true);
+  };
+
+  // Cuando se cierra el formulario editar, limpiamos estado y recargamos lista
+  const handleCerrarEditar = () => {
+    setIsEditFormOpen(false);
+    setUbicacionParaEditar(null);
+    queryClient.invalidateQueries(["ubicacionesTecnicas"]);
+  };
 
   return (
     <div className="p-6 mx-auto">
@@ -225,13 +227,10 @@ const UbicacionesTecnicas: React.FC = () => {
               </Button>
               <Button
                 variant="destructive"
-                onClick={() =>
-                  deleteMutation.mutate(borrarUbicacion?.idUbicacion || 0)
-                }
+                onClick={() => deleteMutation.mutate(borrarUbicacion?.idUbicacion || 0)}
                 disabled={deleteMutation.isPending}
               >
-                <Trash /> Eliminar{" "}
-                {deleteMutation.isPending && (
+                <Trash /> Eliminar {deleteMutation.isPending && (
                   <LoaderCircle className="animate-spin ml-2" />
                 )}
               </Button>
@@ -239,6 +238,15 @@ const UbicacionesTecnicas: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Mostrar el modal editar solo si está abierto */}
+      {isEditFormOpen && ubicacionParaEditar && (
+        <EditUbicacionForm
+          open={isEditFormOpen}
+          onClose={handleCerrarEditar}
+          idUbicacion={ubicacionParaEditar.idUbicacion} // Pasamos id para precargar el form
+        />
+      )}
 
       <Accordion
         type="single"
@@ -281,6 +289,20 @@ const UbicacionesTecnicas: React.FC = () => {
                       </TooltipTrigger>
                       <TooltipContent>
                         <span>Crear ubicación a partir de esta</span>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button
+                          variant="ghost"
+                          className="p-1 text-muted-foreground hover:text-muted-foreground/80"
+                          onClick={() => handleEditarClick(detalle)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span>Editar ubicación</span>
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>
