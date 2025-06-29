@@ -190,7 +190,9 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   const [padres, setPadres] = useState<(string | number | null)[]>([null]);
 
   // Helper function to flatten the hierarchy
-  const flattenUbicaciones = (nodes: UbicacionTecnica[]): UbicacionTecnica[] => {
+  const flattenUbicaciones = (
+    nodes: UbicacionTecnica[]
+  ): UbicacionTecnica[] => {
     let list: UbicacionTecnica[] = [];
     for (const node of nodes) {
       const { children, ...rest } = node;
@@ -228,22 +230,29 @@ const FormNuevaUbicacion: React.FC<Props> = ({
 
     // Si se encontró un padre físico, se agrega como tal.
     if (padreFisico) {
-      payload.padres.push({ idPadre: padreFisico.idUbicacion, esUbicacionFisica: true });
+      payload.padres.push({
+        idPadre: padreFisico.idUbicacion,
+        esUbicacionFisica: true,
+      });
     } else if (partes.length > 1) {
       // Si debería tener un padre pero no se encontró, es un error.
-      toast.error(`Error: No se encontró la ubicación padre con código "${codigoSinUltimoNivel}".`);
+      toast.error(
+        `Error: No se encontró la ubicación padre con código "${codigoSinUltimoNivel}".`
+      );
       return;
     }
 
     // Si es un equipo, se agregan los padres virtuales seleccionados
     if (esEquipo) {
       const idsPadresVirtuales = padres
-        .filter((p): p is number => p !== null && typeof p === 'number')
-        .map((id) => ({ idPadre: id, esUbicacionFisica: false }));
-      
+        .filter((p) => p !== null)
+        .map((id) => ({ idPadre: Number(id), esUbicacionFisica: false }));
+
       for (const p of idsPadresVirtuales) {
         // Evitar duplicados si un padre virtual ya fue añadido como físico
-        if (!payload.padres.some(existente => existente.idPadre === p.idPadre)) {
+        if (
+          !payload.padres.some((existente) => existente.idPadre === p.idPadre)
+        ) {
           payload.padres.push(p);
         }
       }
@@ -612,7 +621,11 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                           value={padres.at(-1) || null}
                           onValueChange={(ubicacion) => {
                             setPadres((prev) => {
-                              return [...prev, ubicacion, null];
+                              return [
+                                ...prev.filter((p) => p !== null),
+                                ubicacion,
+                                null,
+                              ];
                             });
                           }}
                         />
