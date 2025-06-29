@@ -21,6 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Link } from "react-router";
 
 interface GrupoTrabajo {
   id: number;
@@ -161,8 +162,11 @@ const Tecnicos = () => {
                   </div>
                 ))
               ) : (
-                <div className="text-gray-500 text-center">
-                  No pertenece a ningún grupo
+                <div className="text-gray-500 text-center pt-2 flex flex-col gap-2">
+                  <span>No pertenece a ningún grupo</span>
+                  <Button variant="link">
+                    <Link to="/grupos">Ir a grupos de trabajo</Link>
+                  </Button>
                 </div>
               ))}
           </div>
