@@ -56,7 +56,7 @@ const Tecnicos = () => {
   }
 
   return (
-    <div className="p-6 mx-auto">
+    <div className="p-6 max-w-6xl">
       <h1 className="text-2xl font-bold mb-3">Técnicos</h1>
       
      <Dialog open={open} onOpenChange={setOpen}>
@@ -72,11 +72,11 @@ const Tecnicos = () => {
         />
      </Dialog>
 
-        <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200">
+      <div className="overflow-x-auto">
+        <table className="hidden md:table min-w-full bg-white border border-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Correo</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grupos de Trabajo</th>
             </tr>
@@ -86,13 +86,13 @@ const Tecnicos = () => {
               <tr key={tecnico.Id}>
                 <td className="px-6 py-4">{tecnico.Nombre}</td>
                 <td className="px-6 py-4">{tecnico.Correo}</td>
-                <td className="px-6 py-4">
-                  <button
-                    className="underline text-gema-green hover:text-green-700"
+                <td className="px-6 py-4 whitespace-nowrap text-sm cursor-pointer">
+                  <div
+                    className="flex items-center w-25 justify-center border-2 border-gray-300 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
                     onClick={() => setModalTecnicoId(tecnico.Id)}
                   >
                     {tecnicoGruposMap[tecnico.Id]?.length || 0}
-                  </button>
+                  </div>
                 </td>
               </tr>
             ))}
