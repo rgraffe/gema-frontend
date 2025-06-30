@@ -8,6 +8,7 @@ import {
   CornerDownRight,
   Eye,
   EyeOff,
+  FileSpreadsheet,
   Pencil,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -186,6 +187,7 @@ const UbicacionesTecnicas: React.FC = () => {
   const [borrarUbicacion, setBorrarUbicacion] =
     useState<UbicacionTecnica | null>(null);
   const [verDetalle, setVerDetalle] = useState<UbicacionTecnica | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Query para obtener los padres de la ubicación seleccionada para ver detalles
   const { data: padresData, isLoading: isLoadingPadres } = useQuery({
@@ -328,6 +330,55 @@ const UbicacionesTecnicas: React.FC = () => {
     );
   if (error) return <div>Error al obtener ubicaciones técnicas</div>;
 
+  const handleExportExcel = async () => {
+    const exportTimer = setTimeout(() => {
+      setIsExporting(true);
+    }, 500); // Espera 500ms para mostrar el loader
+
+    try {
+      const url = `${
+        import.meta.env.VITE_BACKEND_BASE_URL
+      }/ubicaciones-tecnicas/export/excel`;
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el archivo");
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = "ubicaciones.xlsx"; // Nombre por defecto
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+
+      // Limpieza
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Error en la exportación a Excel:", error);
+      toast.error("No se pudo exportar a Excel.");
+    } finally {
+      clearTimeout(exportTimer);
+      setIsExporting(false);
+    }
+  };
+
   const handleEditarClick = (detalle: UbicacionTecnica | null) => {
     setUbicacionParaEditar(detalle);
   };
@@ -341,22 +392,36 @@ const UbicacionesTecnicas: React.FC = () => {
     <div className="p-6 mx-auto">
       <h1 className="text-2xl font-bold mb-3">Ubicaciones Técnicas</h1>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="mb-5 bg-gema-green hover:bg-green-700">
-            <CirclePlus className="mr-2" />
-            Crear nueva ubicación
-          </Button>
-        </DialogTrigger>
-        <FormNuevaUbicacion
-          open={open}
-          onClose={() => setOpen(false)}
-          formValues={formValues}
-          setFormValues={setFormValues}
-          displayedLevels={displayedLevels}
-          setDisplayedLevels={setDisplayedLevels}
-        />
-      </Dialog>
+      <div className="flex gap-2">
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="mb-5 bg-gema-green hover:bg-green-700">
+              <CirclePlus className="mr-2" />
+              Crear nueva ubicación
+            </Button>
+          </DialogTrigger>
+          <FormNuevaUbicacion
+            open={open}
+            onClose={() => setOpen(false)}
+            formValues={formValues}
+            setFormValues={setFormValues}
+            displayedLevels={displayedLevels}
+            setDisplayedLevels={setDisplayedLevels}
+          />
+        </Dialog>
+        <Button
+          className="mb-5 bg-gema-blue hover:bg-blue-500"
+          onClick={handleExportExcel}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <LoaderCircle className="animate-spin mr-2" />
+          ) : (
+            <FileSpreadsheet className="mr-2" />
+          )}
+          {isExporting ? "Exportando..." : "Exportar a Excel"}
+        </Button>
+      </div>
 
       {/* Diálogo para ver detalles de la ubicación */}
       <Dialog
