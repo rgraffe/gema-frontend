@@ -1,48 +1,27 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getUbicacionesTecnicas, updateUbicacionTecnica } from "@/services/ubicacionesTecnicas";
+import { updateUbicacionTecnica } from "@/services/ubicacionesTecnicas";
 import { toast } from "sonner";
 
 interface EditUbicacionProps {
   open: boolean;
   onClose: () => void;
-  idUbicacion: number; // ✅ Agregado para corregir error
+  idUbicacion: number;
+  descripcionOriginal?: string;
 }
 
-const EditUbicacionForm: React.FC<EditUbicacionProps> = ({ open, onClose, idUbicacion }) => {
+const EditUbicacionForm: React.FC<EditUbicacionProps> = ({
+  open,
+  onClose,
+  idUbicacion,
+  descripcionOriginal,
+}) => {
   const queryClient = useQueryClient();
-  const [descripcion, setDescripcion] = useState("");
-
-  // Obtener datos actuales de la ubicación
-  // Obtener datos actuales de la ubicación
-const { data: ubicaciones, isLoading } = useQuery({
-  queryKey: ["ubicacionesTecnicas"],
-  queryFn: getUbicacionesTecnicas,
-  staleTime: 1000 * 60 * 5,
-});
-
-if (isLoading) {
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <p className="text-center">Cargando ubicación...</p>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-
-  // Cargar descripción automáticamente al abrir modal
-  useEffect(() => {
-    if (ubicaciones?.data && idUbicacion) {
-      const ubicacion = ubicaciones.data.find((u: any) => u.idUbicacion === idUbicacion);
-      setDescripcion(ubicacion?.descripcion || "");
-    }
-  }, [idUbicacion, ubicaciones]);
+  const [descripcion, setDescripcion] = useState(descripcionOriginal || "");
 
   const { mutate, status } = useMutation({
     mutationFn: ({ id, descripcion }: { id: number; descripcion: string }) =>
@@ -68,15 +47,13 @@ if (isLoading) {
       <DialogContent className="max-w-lg">
         <h2 className="text-lg font-semibold mb-4">Editar Ubicación</h2>
 
-        <div className="space-y-4">
-          <div>
-            <Label>Descripción</Label>
-            <Input
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Nueva descripción"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label>Descripción</Label>
+          <Input
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="Nueva descripción"
+          />
         </div>
 
         <div className="flex justify-end gap-2 mt-6">

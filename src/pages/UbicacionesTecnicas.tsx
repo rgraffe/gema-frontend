@@ -483,6 +483,7 @@ const UbicacionesTecnicas: React.FC = () => {
           open={!!ubicacionParaEditar}
           onClose={handleCerrarEditar}
           idUbicacion={ubicacionParaEditar.idUbicacion}
+          descripcionOriginal={ubicacionParaEditar.descripcion}
         />
       )}
 
