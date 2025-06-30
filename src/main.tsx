@@ -8,10 +8,11 @@ import App from "./App";
 import ProtectedRoute from "./components/ui/protected-route";
 import "./index.css";
 import Canva from "./pages/Canva";
-import VistaGeneral from "./pages/VistaGeneral";
+// import VistaGeneral from "./pages/VistaGeneral";
 import UbicacionesTecnicas from "./pages/UbicacionesTecnicas";
 import GruposTrabajo from "./components/GruposTrabajo";
 import { Toaster } from "./components/ui/sonner";
+import Tecnicos from "./pages/Tecnicos";
 
 const queryClient = new QueryClient();
 
@@ -33,10 +34,10 @@ const router = createBrowserRouter([
         index: true,
         element: <Canva />,
       },
-      {
-        path: "general",
-        element: <VistaGeneral />,
-      },
+      // {
+      //   path: "general",
+      //   element: <VistaGeneral />,
+      // },
       {
         path: "ubicaciones-tecnicas",
         element: <UbicacionesTecnicas />,
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
         path: "grupos",
         element: <GruposTrabajo />,
       },
+      {
+        path: "tecnicos",
+        element: <Tecnicos />
+      }
     ],
   },
 ]);

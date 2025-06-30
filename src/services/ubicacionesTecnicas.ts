@@ -1,9 +1,9 @@
 import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
 
 /**
- * Obtiene todas las ubicaciones técnicas.
+ * Obtiene todas las ubicaciones técnicas en forma jerárquica.
  * @throws {Error} Si falla la petición.
- * @returns La respuesta del backend en formato JSON.
+ * @returns La respuesta del backend en formato JSON, que debe tener la estructura jerárquica.
  */
 export async function getUbicacionesTecnicas() {
   const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -22,7 +22,9 @@ export async function getUbicacionesTecnicas() {
         "Error al obtener las ubicaciones técnicas, por favor intente de nuevo."
     );
   }
-  return resp.json();
+  // El backend retorna directamente los nodos raíz que incluyen sus hijos en "children"
+  const data = await resp.json() as { data: UbicacionTecnica[] };
+  return data;
 }
 
 /**
@@ -53,7 +55,7 @@ export async function getUbicacionesDependientes(id: number, nivel?: number) {
         "Error al obtener ubicaciones dependientes, por favor intente de nuevo."
     );
   }
-  return resp.json();
+  return resp.json() as Promise<{ data: UbicacionTecnica[] }>;
 }
 
 /**
@@ -212,6 +214,31 @@ export async function deleteUbicacionTecnica(id: number) {
     throw new Error(
       data.error ||
         "Error al eliminar la ubicación técnica, por favor intente de nuevo."
+    );
+  }
+  return resp.json();
+}
+
+/**
+ * Obtiene los padres directos de una ubicación técnica.
+ * @param {number} idHijo El ID de la ubicación para la que se buscan los padres.
+ * @returns La respuesta del backend con la lista de padres.
+ */
+export async function getPadresDeUbicacion(idHijo: number) {
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+  const token = localStorage.getItem("authToken");
+  const resp = await fetch(`${BASE_URL}/ubicaciones-tecnicas/padres/${idHijo}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!resp.ok) {
+    const data = await resp.json();
+    throw new Error(
+      data.error ||
+        "Error al obtener los padres de la ubicación, por favor intente de nuevo."
     );
   }
   return resp.json();

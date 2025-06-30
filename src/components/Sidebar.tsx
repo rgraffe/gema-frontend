@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { User, BarChart3, Users, MapPin, X, Menu } from 'lucide-react'
+import { User, BarChart3, Users, MapPin, X, Menu, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 
 type MenuItem = {
@@ -15,6 +15,7 @@ const Sidebar = () => {
     { icon: BarChart3, label: 'Vista General', path: '/general' },
     { icon: MapPin, label: 'Ubicaciones Técnicas', path: '/locations' },
     { icon: Users, label: 'Grupos de Trabajo', path: '/groups' },
+    { icon: UserPlus, label: 'Tecnicos', path:'/tecnicos' },
   ]
 
   return (

@@ -62,7 +62,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
 
   // Nivel 1: módulo ya viene desde la consulta inicial
   const selectedNivel1 = ubicacionesData?.data?.find(
-    (u: any) => u.abreviacion === formValues.modulo
+    (u) => u.abreviacion === formValues.modulo
   );
   const { data: dependientesNivel2, isLoading: loadingNivel2 } = useQuery({
     queryKey: ["ubicacionesDependientes", selectedNivel1?.idUbicacion, 2],
@@ -71,7 +71,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   });
 
   const selectedNivel2 = dependientesNivel2?.data?.find(
-    (u: any) => u.abreviacion === formValues.planta
+    (u) => u.abreviacion === formValues.planta
   );
   const { data: dependientesNivel3, isLoading: loadingNivel3 } = useQuery({
     queryKey: ["ubicacionesDependientes", selectedNivel2?.idUbicacion, 3],
@@ -80,7 +80,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   });
 
   const selectedNivel3 = dependientesNivel3?.data?.find(
-    (u: any) => u.abreviacion === formValues.espacio
+    (u) => u.abreviacion === formValues.espacio
   );
   const { data: dependientesNivel4, isLoading: loadingNivel4 } = useQuery({
     queryKey: ["ubicacionesDependientes", selectedNivel3?.idUbicacion, 4],
@@ -89,7 +89,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   });
 
   const selectedNivel4 = dependientesNivel4?.data?.find(
-    (u: any) => u.abreviacion === formValues.tipo
+    (u) => u.abreviacion === formValues.tipo
   );
   const { data: dependientesNivel5, isLoading: loadingNivel5 } = useQuery({
     queryKey: ["ubicacionesDependientes", selectedNivel4?.idUbicacion, 5],
@@ -98,7 +98,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   });
 
   const selectedNivel5 = dependientesNivel5?.data?.find(
-    (u: any) => u.abreviacion === formValues.subtipo
+    (u) => u.abreviacion === formValues.subtipo
   );
   const { data: dependientesNivel6, isLoading: loadingNivel6 } = useQuery({
     queryKey: ["ubicacionesDependientes", selectedNivel5?.idUbicacion, 6],
@@ -107,7 +107,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
   });
 
   const selectedNivel6 = dependientesNivel6?.data?.find(
-    (u: any) => u.abreviacion === formValues.numero
+    (u) => u.abreviacion === formValues.numero
   );
 
   const { data: dependientesNivel7, isLoading: loadingNivel7 } = useQuery({
@@ -189,36 +189,79 @@ const FormNuevaUbicacion: React.FC<Props> = ({
 
   const [padres, setPadres] = useState<(string | number | null)[]>([null]);
 
+  // Helper function to flatten the hierarchy
+  const flattenUbicaciones = (
+    nodes: UbicacionTecnica[]
+  ): UbicacionTecnica[] => {
+    let list: UbicacionTecnica[] = [];
+    for (const node of nodes) {
+      const { children, ...rest } = node;
+      list.push(rest as UbicacionTecnica);
+      if (children && children.length > 0) {
+        list = list.concat(flattenUbicaciones(children));
+      }
+    }
+    return list;
+  };
+
   const onSubmit = () => {
     if (!ubicacionesData || !ubicacionesData.data) {
       toast.error("Los datos de ubicaciones aún no se han cargado.");
       return;
     }
 
-    const ubicacionesTecnicasExistentes = ubicacionesData.data;
+    // Aplanar la lista de ubicaciones para buscar al padre correctamente
+    const flatUbicaciones = flattenUbicaciones(ubicacionesData.data);
 
     const codigoCompleto = generarCodigo();
     const partes = codigoCompleto.split("-");
     const codigoSinUltimoNivel = partes.slice(0, -1).join("-");
 
-    const padreEncontrado = ubicacionesTecnicasExistentes.find(
-      (u: any) => u.codigo_Identificacion === codigoSinUltimoNivel
+    // Encontrar el padre físico basado en la jerarquía del formulario
+    const padreFisico = flatUbicaciones.find(
+      (u) => u.codigo_Identificacion === codigoSinUltimoNivel
     );
 
     const payload: CreateUbicacionTecnicaPayload = {
       descripcion: formValues.descripcion,
       abreviacion: getAbreviacion(),
-      padres: padreEncontrado
-        ? [{ idPadre: padreEncontrado.idUbicacion, esUbicacionFisica: false }]
-        : [],
+      padres: [],
     };
 
+    // Si se encontró un padre físico, se agrega como tal.
+    if (padreFisico) {
+      payload.padres.push({
+        idPadre: padreFisico.idUbicacion,
+        esUbicacionFisica: true,
+      });
+    } else if (partes.length > 1) {
+      // Si debería tener un padre pero no se encontró, es un error.
+      toast.error(
+        `Error: No se encontró la ubicación padre con código "${codigoSinUltimoNivel}".`
+      );
+      return;
+    }
+
+    // Si es un equipo, se agregan los padres virtuales seleccionados
     if (esEquipo) {
-      // Agregamos los padres seleccionados en el Combobox
-      const idsPadres = padres
+      const idsPadresVirtuales = padres
         .filter((p) => p !== null)
         .map((id) => ({ idPadre: Number(id), esUbicacionFisica: false }));
-      payload.padres.push(...idsPadres);
+
+      for (const p of idsPadresVirtuales) {
+        // Evitar duplicados si un padre virtual ya fue añadido como físico
+        if (
+          !payload.padres.some((existente) => existente.idPadre === p.idPadre)
+        ) {
+          payload.padres.push(p);
+        }
+      }
+    }
+
+    // Validaciones finales
+    if (!payload.descripcion || !payload.abreviacion) {
+      toast.error("La descripción y la abreviación son requeridas.");
+      return;
     }
 
     mutate(payload);
@@ -256,8 +299,8 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 }
                 options={
                   ubicacionesData?.data
-                    ?.filter((u: any) => u.nivel === 1)
-                    .map((u: any) => ({
+                    ?.filter((u) => u.nivel === 1)
+                    .map((u) => ({
                       value: u.abreviacion,
                       label: `${u.abreviacion} - ${u.descripcion}`,
                     })) || []
@@ -285,7 +328,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                     }))
                   }
                   options={
-                    dependientesNivel2?.data?.map((u: any) => ({
+                    dependientesNivel2?.data?.map((u) => ({
                       value: u.abreviacion,
                       label: `${u.abreviacion} - ${u.descripcion}`,
                     })) || []
@@ -315,7 +358,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                     }))
                   }
                   options={
-                    dependientesNivel3?.data?.map((u: any) => ({
+                    dependientesNivel3?.data?.map((u) => ({
                       value: u.abreviacion,
                       label: `${u.abreviacion} - ${u.descripcion}`,
                     })) || []
@@ -342,7 +385,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                     }))
                   }
                   options={
-                    dependientesNivel4?.data?.map((u: any) => ({
+                    dependientesNivel4?.data?.map((u) => ({
                       value: u.abreviacion,
                       label: `${u.abreviacion} - ${u.descripcion}`,
                     })) || []
@@ -370,7 +413,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                     }))
                   }
                   options={
-                    dependientesNivel5?.data?.map((u: any) => ({
+                    dependientesNivel5?.data?.map((u) => ({
                       value: u.abreviacion,
                       label: `${u.abreviacion} - ${u.descripcion}`,
                     })) || []
@@ -395,7 +438,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                     }))
                   }
                   options={
-                    dependientesNivel6?.data?.map((u: any) => ({
+                    dependientesNivel6?.data?.map((u) => ({
                       value: u.abreviacion,
                       label: `${u.abreviacion} - ${u.descripcion}`,
                     })) || []
@@ -418,7 +461,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                     setFormValues((prev) => ({ ...prev, pieza: value }))
                   }
                   options={
-                    dependientesNivel7?.data?.map((u: any) => ({
+                    dependientesNivel7?.data?.map((u) => ({
                       value: u.abreviacion,
                       label: `${u.abreviacion} - ${u.descripcion}`,
                     })) || []
@@ -578,7 +621,11 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                           value={padres.at(-1) || null}
                           onValueChange={(ubicacion) => {
                             setPadres((prev) => {
-                              return [...prev, ubicacion, null];
+                              return [
+                                ...prev.filter((p) => p !== null),
+                                ubicacion,
+                                null,
+                              ];
                             });
                           }}
                         />
