@@ -7,12 +7,15 @@ import {
   Trash,
   CornerDownRight,
   Eye,
-  EyeOff, // Importar el ícono del ojo cerrado
+  EyeOff,
   FileSpreadsheet,
+  Pencil,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import FormNuevaUbicacion from "@/components/FormNuevaUbicacion";
 import { Button } from "@/components/ui/button";
+import EditUbicacionForm from "@/components/EditUbicacionForm";
+
 import {
   deleteUbicacionTecnica,
   getUbicacionesDependientes,
@@ -56,15 +59,24 @@ const NIVELES = [
 // Componente recursivo para renderizar la jerarquía de ubicaciones
 const UbicacionHierarchy: React.FC<{
   ubicaciones: UbicacionTecnica[];
-  onEdit: (codigo: string) => void;
+  onCreateFrom: (codigo: string) => void;
   onDelete: (detalle: UbicacionTecnica) => void;
   onViewDetails: (detalle: UbicacionTecnica | null) => void; // Acepta null para cerrar
+  onEdit: (detalle: UbicacionTecnica | null) => void; // Función para editar ubicación
   activeDetailItem: UbicacionTecnica | null; // Prop para saber qué item está activo
-}> = ({ ubicaciones, onEdit, onDelete, onViewDetails, activeDetailItem }) => {
+}> = ({
+  ubicaciones,
+  onCreateFrom,
+  onDelete,
+  onViewDetails,
+  onEdit,
+  activeDetailItem,
+}) => {
   return (
     <>
       {ubicaciones.map((ubicacion) => {
-        const isViewing = activeDetailItem?.idUbicacion === ubicacion.idUbicacion;
+        const isViewing =
+          activeDetailItem?.idUbicacion === ubicacion.idUbicacion;
         return (
           <div key={ubicacion.idUbicacion}>
             <div className="flex px-4 py-2 bg-white hover:bg-gray-50 items-center">
@@ -78,7 +90,9 @@ const UbicacionHierarchy: React.FC<{
                   <p className="font-mono font-semibold text-sm">
                     {ubicacion.codigo_Identificacion}
                   </p>
-                  <p className="text-sm text-gray-700">{ubicacion.descripcion}</p>
+                  <p className="text-sm text-gray-700">
+                    {ubicacion.descripcion}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-2/5 items-center justify-end gap-1 ml-auto">
@@ -87,13 +101,17 @@ const UbicacionHierarchy: React.FC<{
                     <Button
                       variant="ghost"
                       className="text-blue-600 !px-2"
-                      onClick={() => onViewDetails(isViewing ? null : ubicacion)}
+                      onClick={() =>
+                        onViewDetails(isViewing ? null : ubicacion)
+                      }
                     >
                       {isViewing ? <EyeOff /> : <Eye />}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span>{isViewing ? "Cerrar detalles" : "Ver detalles"}</span>
+                    <span>
+                      {isViewing ? "Cerrar detalles" : "Ver detalles"}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -101,13 +119,29 @@ const UbicacionHierarchy: React.FC<{
                     <Button
                       variant="ghost"
                       className="text-gray-500 !px-2"
-                      onClick={() => onEdit(ubicacion.codigo_Identificacion)}
+                      onClick={() =>
+                        onCreateFrom(ubicacion.codigo_Identificacion)
+                      }
                     >
                       <CirclePlus />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span>Crear ubicación a partir de esta</span>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="text-yellow-600 !px-2 hover:text-yellow-700"
+                      onClick={() => onEdit(ubicacion)}
+                    >
+                      <Pencil />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>Editar descripción</span>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -130,10 +164,11 @@ const UbicacionHierarchy: React.FC<{
             {ubicacion.children && ubicacion.children.length > 0 && (
               <UbicacionHierarchy
                 ubicaciones={ubicacion.children}
-                onEdit={onEdit}
+                onCreateFrom={onCreateFrom}
                 onDelete={onDelete}
                 onViewDetails={onViewDetails}
-                activeDetailItem={activeDetailItem} // Pasar la prop recursivamente
+                onEdit={onEdit}
+                activeDetailItem={activeDetailItem}
               />
             )}
           </div>
@@ -144,6 +179,9 @@ const UbicacionHierarchy: React.FC<{
 };
 
 const UbicacionesTecnicas: React.FC = () => {
+  // Estados para modales
+  const [ubicacionParaEditar, setUbicacionParaEditar] =
+    useState<UbicacionTecnica | null>(null);
   // Estado de diálogos
   const [open, setOpen] = useState(false);
   const [borrarUbicacion, setBorrarUbicacion] =
@@ -158,7 +196,6 @@ const UbicacionesTecnicas: React.FC = () => {
     enabled: !!verDetalle,
   });
 
-  // Dependencias de la ubicación a eliminar
   const dependencias = useQuery({
     queryFn: () =>
       getUbicacionesDependientes(borrarUbicacion?.idUbicacion || 0),
@@ -166,7 +203,6 @@ const UbicacionesTecnicas: React.FC = () => {
     enabled: !!borrarUbicacion,
   });
 
-  // Estado para crear ubicación
   const [formValues, setFormValues] = useState({
     modulo: "",
     planta: "",
@@ -180,7 +216,6 @@ const UbicacionesTecnicas: React.FC = () => {
   const [displayedLevels, setDisplayedLevels] = useState<number>(1);
 
   const initializeFormValues = (codigo: string) => {
-    // Extraer los niveles del código de identificación
     const nivelesExtraidos = codigo.split("-");
     const valoresIniciales = { ...formValues };
     let levelAmount = 0;
@@ -194,7 +229,6 @@ const UbicacionesTecnicas: React.FC = () => {
     setOpen(true);
   };
 
-  // Usamos useQuery para llamar al servicio getUbicacionesTecnicas
   const { data, error, isLoading } = useQuery({
     queryKey: ["ubicacionesTecnicas"],
     queryFn: getUbicacionesTecnicas,
@@ -302,7 +336,9 @@ const UbicacionesTecnicas: React.FC = () => {
     }, 500); // Espera 500ms para mostrar el loader
 
     try {
-      const url = `${import.meta.env.VITE_BACKEND_BASE_URL}/ubicaciones-tecnicas/export/excel`;
+      const url = `${
+        import.meta.env.VITE_BACKEND_BASE_URL
+      }/ubicaciones-tecnicas/export/excel`;
       const token = localStorage.getItem("authToken");
       const response = await fetch(url, {
         headers: {
@@ -341,6 +377,15 @@ const UbicacionesTecnicas: React.FC = () => {
       clearTimeout(exportTimer);
       setIsExporting(false);
     }
+  };
+
+  const handleEditarClick = (detalle: UbicacionTecnica | null) => {
+    setUbicacionParaEditar(detalle);
+  };
+
+  const handleCerrarEditar = () => {
+    setUbicacionParaEditar(null);
+    queryClient.invalidateQueries({ queryKey: ["ubicacionesTecnicas"] });
   };
 
   return (
@@ -423,10 +468,7 @@ const UbicacionesTecnicas: React.FC = () => {
               </p>
             )}
             <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setVerDetalle(null)}
-              >
+              <Button variant="outline" onClick={() => setVerDetalle(null)}>
                 Cerrar
               </Button>
             </div>
@@ -499,6 +541,16 @@ const UbicacionesTecnicas: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Mostrar el modal editar solo si está abierto */}
+      {ubicacionParaEditar && (
+        <EditUbicacionForm
+          open={!!ubicacionParaEditar}
+          onClose={handleCerrarEditar}
+          idUbicacion={ubicacionParaEditar.idUbicacion}
+          descripcionOriginal={ubicacionParaEditar.descripcion}
+        />
+      )}
 
       {/* Filtros por niveles */}
       {!!flatUbicaciones.length && (
@@ -583,9 +635,10 @@ const UbicacionesTecnicas: React.FC = () => {
             <AccordionContent>
               <UbicacionHierarchy
                 ubicaciones={[ubicacion]}
-                onEdit={initializeFormValues}
+                onCreateFrom={initializeFormValues}
                 onDelete={setBorrarUbicacion}
                 onViewDetails={setVerDetalle}
+                onEdit={handleEditarClick}
                 activeDetailItem={verDetalle}
               />
             </AccordionContent>

@@ -1,13 +1,25 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTecnico } from "@/services/tecnicos";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./ui/form";
 
 // Esquema de validación
 const tecnicoSchema = z.object({
@@ -15,7 +27,10 @@ const tecnicoSchema = z.object({
   Correo: z
     .string()
     .email("Correo inválido")
-    .regex(/^[a-zA-Z0-9._%+-]+@ucab\.edu\.ve$/, "Debe ser un correo institucional @ucab.edu.ve"),
+    .regex(
+      /^[a-zA-Z0-9._%+-]+@ucab\.edu\.ve$/,
+      "Debe ser un correo institucional @ucab.edu.ve"
+    ),
 });
 
 type TecnicoForm = z.infer<typeof tecnicoSchema>;
@@ -46,7 +61,7 @@ const FormNuevoTecnico: React.FC<Props> = ({ open, onClose }) => {
       queryClient.invalidateQueries({ queryKey: ["tecnicos"] });
     },
     onError: (error: unknown) => {
-      if (error instanceof Error){
+      if (error instanceof Error) {
         toast.error(error?.message || "Error al crear el técnico");
       } else {
         toast.error("Error al crear el técnico");
@@ -60,48 +75,62 @@ const FormNuevoTecnico: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent 
-        className="max-w-md w-full"
-        contentClassName="space-y-2"
-      >
-     
+      <DialogContent className="max-w-md w-full" contentClassName="space-y-2">
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Técnico</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-2">
-          <div className="space-y-2">
-            <Label htmlFor="Nombre">Nombre</Label>
-            <Input
-              id="Nombre"
-              {...form.register("Nombre")}
-              placeholder="Ejemplo: Juan Pérez"
-              autoComplete="off"
+        <Form {...form}>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <FormField
+              control={form.control}
+              name="Nombre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="Nombre"
+                      placeholder="Ejemplo: Juan Pérez"
+                      autoComplete="off"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <span className="text-red-600 text-xs">{form.formState.errors.Nombre?.message}</span>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="correo">Correo institucional</Label>
-            <Input
-              id="correo"
-              {...form.register("Correo")}
-              placeholder="ejemplo@ucab.edu.ve"
-              autoComplete="off"
+            <FormField
+              control={form.control}
+              name="Correo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Correo institucional</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="Correo"
+                      placeholder="ejemplo@ucab.edu.ve"
+                      autoComplete="off"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <span className="text-red-600 text-xs">{form.formState.errors.Correo?.message}</span>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" type="button" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button
-              className="bg-gema-green hover:bg-green-700 text-white"
-              type="submit"
-              disabled={mutation.isPending}
-            >
-              {mutation.isPending ? "Creando..." : "Crear Técnico"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" type="button" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button
+                className="bg-gema-green hover:bg-green-700 text-white"
+                type="submit"
+                disabled={mutation.isPending}
+              >
+                {mutation.isPending ? "Creando..." : "Crear Técnico"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
