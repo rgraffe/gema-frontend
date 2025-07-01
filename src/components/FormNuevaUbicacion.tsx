@@ -17,6 +17,7 @@ import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
 import { useState } from "react";
 import { Combobox } from "./ui/combobox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { ubicacionTecnicaSchema } from "@/validators/ubicacionTecnicaSchema";
 
 type CreateUbicacionTecnicaPayload = {
   descripcion: string;
@@ -257,10 +258,13 @@ const FormNuevaUbicacion: React.FC<Props> = ({
       }
     }
 
-    // Validaciones finales
-    if (!payload.descripcion || !payload.abreviacion) {
-      toast.error("La descripción y la abreviación son requeridas.");
-      return;
+    // Validaciones finales con Zod
+    const validationResult = ubicacionTecnicaSchema.safeParse(payload);
+    if (!validationResult.success) {
+      validationResult.error.errors.forEach((error) => {
+        toast.error(error.message);
+      });
+      return; // Detener la ejecución si la validación falla
     }
 
     mutate(payload);
