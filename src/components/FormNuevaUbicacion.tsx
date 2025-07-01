@@ -10,14 +10,13 @@ import {
   getUbicacionesTecnicas,
   getUbicacionesDependientes,
 } from "@/services/ubicacionesTecnicas";
-import { CircleX, LoaderCircle, PlusCircle, Trash } from "lucide-react";
+import { CircleX, Info, LoaderCircle, PlusCircle, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "./ui/switch";
 import type { UbicacionTecnica } from "@/types/ubicacionesTecnicas.types";
 import { useState } from "react";
 import { Combobox } from "./ui/combobox";
-
-// ... (los tipos de datos no cambian)
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 type CreateUbicacionTecnicaPayload = {
   descripcion: string;
@@ -273,7 +272,31 @@ const FormNuevaUbicacion: React.FC<Props> = ({
         className="w-6xl md:min-w-5xl"
         contentClassName="space-y-2"
       >
-        <h2 className="text-xl font-semibold">Crear Ubicación Técnica</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-xl font-semibold">Crear Ubicación Técnica</h2>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = "/guia-ubicaciones-tecnicas.pdf";
+                  link.download = "guia-ubicaciones-tecnicas.pdf";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                aria-label="Descargar guía de ubicaciones técnicas"
+              >
+                <Info />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Ver guía de ubicaciones técnicas</span>
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <div className="grid grid-cols-2 gap-8">
           <div className="space-y-2">
             <div>
