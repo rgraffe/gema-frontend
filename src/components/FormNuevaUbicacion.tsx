@@ -273,7 +273,7 @@ const FormNuevaUbicacion: React.FC<Props> = ({
         contentClassName="space-y-2"
       >
         <div className="flex items-center gap-1">
-          <h2 className="text-xl font-semibold">Crear Ubicación Técnica </h2>
+          <h2 className="text-xl font-semibold">Crear Ubicación Técnica</h2>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

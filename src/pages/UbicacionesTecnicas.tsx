@@ -45,6 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import VerManualDialog from "@/components/VerManualDialog";
 
 const NIVELES = [
   "modulo",
@@ -188,6 +189,13 @@ const UbicacionesTecnicas: React.FC = () => {
     useState<UbicacionTecnica | null>(null);
   const [verDetalle, setVerDetalle] = useState<UbicacionTecnica | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  const haCargadoUbicacionesLocal = localStorage.getItem(
+    "haCargadoUbicaciones"
+  );
+  const [haCargadoUbicaciones, setHaCargadoUbicaciones] = useState(
+    !!haCargadoUbicacionesLocal
+  );
 
   // Query para obtener los padres de la ubicación seleccionada para ver detalles
   const { data: padresData, isLoading: isLoadingPadres } = useQuery({
@@ -392,8 +400,13 @@ const UbicacionesTecnicas: React.FC = () => {
     <div className="p-6 mx-auto">
       <h1 className="text-2xl font-bold mb-3">Ubicaciones Técnicas</h1>
 
+      <VerManualDialog
+        open={!haCargadoUbicaciones && open}
+        onOpenChange={(open) => setHaCargadoUbicaciones(open)}
+      />
+
       <div className="flex gap-2">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open && haCargadoUbicaciones} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="mb-5 bg-gema-green hover:bg-green-700">
               <CirclePlus className="mr-2" />
@@ -401,7 +414,7 @@ const UbicacionesTecnicas: React.FC = () => {
             </Button>
           </DialogTrigger>
           <FormNuevaUbicacion
-            open={open}
+            open={open && haCargadoUbicaciones}
             onClose={() => setOpen(false)}
             formValues={formValues}
             setFormValues={setFormValues}
