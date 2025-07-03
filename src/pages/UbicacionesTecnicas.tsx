@@ -530,26 +530,41 @@ const UbicacionesTecnicas: React.FC = () => {
                 No hay ubicaciones dependientes.
               </p>
             )}
-            <div className="flex justify-end gap-2 mt-2">
+            <div className="flex justify-between items-center mt-4">
               <Button
-                variant="outline"
-                onClick={() => setBorrarUbicacion(null)}
-                disabled={deleteMutation.isPending}
+                className="bg-gema-blue hover:bg-blue-500 text-white"
+                onClick={handleExportExcel}
+                disabled={isExporting || deleteMutation.isPending}
               >
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() =>
-                  deleteMutation.mutate(borrarUbicacion?.idUbicacion || 0)
-                }
-                disabled={deleteMutation.isPending}
-              >
-                <Trash /> Eliminar{" "}
-                {deleteMutation.isPending && (
-                  <LoaderCircle className="animate-spin ml-2" />
+                {isExporting ? (
+                  <LoaderCircle className="animate-spin mr-2" />
+                ) : (
+                  <FileSpreadsheet className="mr-2" />
                 )}
+                {isExporting ? "Exportando..." : "Guardar copia y exportar"}
               </Button>
+
+              <div className="flex justify-end gap-2 mt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setBorrarUbicacion(null)}
+                  disabled={deleteMutation.isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() =>
+                    deleteMutation.mutate(borrarUbicacion?.idUbicacion || 0)
+                  }
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash /> Eliminar{" "}
+                  {deleteMutation.isPending && (
+                    <LoaderCircle className="animate-spin ml-2" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
