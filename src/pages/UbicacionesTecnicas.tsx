@@ -541,7 +541,7 @@ const UbicacionesTecnicas: React.FC = () => {
                 ) : (
                   <FileSpreadsheet className="mr-2" />
                 )}
-                {isExporting ? "Exportando..." : "Guardar copia y exportar"}
+                {isExporting ? "Exportando..." : "Guardar respaldo en Excel"}
               </Button>
 
               <div className="flex justify-end gap-2 mt-2">
