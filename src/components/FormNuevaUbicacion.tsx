@@ -116,6 +116,26 @@ const FormNuevaUbicacion: React.FC<Props> = ({
     enabled: !!selectedNivel6,
   });
 
+  // Determina si el último nivel seleccionado es una ubicación válida y existente.
+  const isLastLevelValid = (() => {
+    switch (displayedLevels) {
+      case 1:
+        return !!selectedNivel1;
+      case 2:
+        return !!selectedNivel2;
+      case 3:
+        return !!selectedNivel3;
+      case 4:
+        return !!selectedNivel4;
+      case 5:
+        return !!selectedNivel5;
+      case 6:
+        return !!selectedNivel6;
+      default:
+        return false; // No se puede agregar más niveles después del 7
+    }
+  })();
+
   const [esEquipo, setEsEquipo] = useState(false);
 
   const closeModal = () => {
@@ -535,14 +555,29 @@ const FormNuevaUbicacion: React.FC<Props> = ({
                 </Button>
               )}
               {displayedLevels < 7 && (
-                <Button
-                  className="flex-1 border-gema-green text-green-700 hover:text-green-800"
-                  variant="outline"
-                  onClick={() => setDisplayedLevels((prev) => prev + 1)}
-                >
-                  <PlusCircle />
-                  Agregar nivel
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {/* Se envuelve el botón en un span para que el tooltip funcione incluso cuando está deshabilitado */}
+                    <span className="flex-1" tabIndex={0}>
+                      <Button
+                        className="w-full border-gema-green text-green-700 hover:text-green-800"
+                        variant="outline"
+                        onClick={() => setDisplayedLevels((prev) => prev + 1)}
+                        disabled={!isLastLevelValid}
+                      >
+                        <PlusCircle />
+                        Agregar nivel
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!isLastLevelValid && (
+                    <TooltipContent>
+                      <p>
+                        Debes seleccionar una ubicación ya existente para poder agregar un nivel.
+                      </p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               )}
             </div>
           </div>
