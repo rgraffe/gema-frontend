@@ -193,7 +193,7 @@ const GruposTrabajo: React.FC = () => {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <span>Añadir técnicos</span>
+                      <span>Ver técnicos</span>
                     </TooltipContent>
                   </Tooltip>
                 </td>
@@ -261,7 +261,7 @@ const GruposTrabajo: React.FC = () => {
                       <span>{trabajadoresPorGrupo.data?.[grupo.id]?.length || 0} Técnicos</span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <span>Añadir técnicos</span>
+                      <span>Ver técnicos</span>
                     </TooltipContent>
                   </Tooltip>
                 </div>
