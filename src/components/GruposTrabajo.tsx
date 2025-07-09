@@ -198,18 +198,32 @@ const GruposTrabajo: React.FC = () => {
                   </Tooltip>
                 </td>
                 <td className="flex items-center justify-evenly gap-2 px-6 py-4 whitespace-nowrap text-sm">
-                  <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
-                    <ClipboardPen
-                      className="h-5 w-5 text-blue-500 cursor-pointer"
-                      onClick={() => setGrupoEditar(grupo)}
-                    />
-                  </div>
-                  <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
-                    <Trash2
-                      className="h-5 w-5 text-red-500 cursor-pointer"
-                      onClick={() => setGrupoEliminar(grupo)}
-                    />
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
+                        <ClipboardPen
+                          className="h-5 w-5 text-blue-500 cursor-pointer"
+                          onClick={() => setGrupoEditar(grupo)}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>Editar grupo</span>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
+                        <Trash2
+                          className="h-5 w-5 text-red-500 cursor-pointer"
+                          onClick={() => setGrupoEliminar(grupo)}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>Eliminar grupo</span>
+                    </TooltipContent>
+                  </Tooltip>
                 </td>
               </tr>
             ))}
@@ -229,15 +243,26 @@ const GruposTrabajo: React.FC = () => {
                     {grupo.codigo}
                   </div>
                   <div className="flex space-x-2">
-                    <button className="p-1 border-2 border-gray-200 rounded-sm">
-                      <ClipboardPen className="h-5 w-5 text-blue-500" />
-                    </button>
-                    <button className="p-1 border-2 border-gray-200 rounded-sm">
-                      <Trash2
-                        className="h-5 w-5 text-red-500"
-                        onClick={() => setGrupoEliminar(grupo)}
-                      />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="p-1 border-2 border-gray-200 rounded-sm">
+                          <ClipboardPen className="h-5 w-5 text-blue-500" onClick={() => setGrupoEditar(grupo)} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span>Editar grupo</span>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="p-1 border-2 border-gray-200 rounded-sm">
+                          <Trash2 className="h-5 w-5 text-red-500" onClick={() => setGrupoEliminar(grupo)} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span>Eliminar grupo</span>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 
