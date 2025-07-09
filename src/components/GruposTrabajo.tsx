@@ -45,6 +45,7 @@ import type { Usuario } from "@/types/usuarios.types";
 import { toast } from "sonner";
 import type { Tecnico } from "@/types/tecnicos.types";
 import { Label } from "./ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface GrupoTrabajo {
   id: number;
@@ -185,9 +186,16 @@ const GruposTrabajo: React.FC = () => {
                   className="px-6 py-4 whitespace-nowrap text-sm cursor-pointer"
                   onClick={() => openTecnicosModal(grupo.id)}
                 >
-                  <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-200 font-medium hover:bg-gray-300 transition">
-                    {trabajadoresPorGrupo.data?.[grupo.id]?.length || 0}
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center border-2 border-gray-300 rounded-lg bg-gray-200 font-medium hover:bg-gray-300 transition">
+                        {trabajadoresPorGrupo.data?.[grupo.id]?.length || 0}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>Añadir técnicos</span>
+                    </TooltipContent>
+                  </Tooltip>
                 </td>
                 <td className="flex items-center justify-evenly gap-2 px-6 py-4 whitespace-nowrap text-sm">
                   <div className="inline-block p-1 border-2 border-gray-200 rounded-sm">
@@ -248,7 +256,14 @@ const GruposTrabajo: React.FC = () => {
                   className="border-2 border-gray-300 rounded-lg bg-gray-200 font-medium px-3 py-1 inline-block text-sm cursor-pointer hover:bg-gray-300"
                   onClick={() => openTecnicosModal(grupo.id)}
                 >
-                  {trabajadoresPorGrupo.data?.[grupo.id]?.length || 0} Técnicos
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>{trabajadoresPorGrupo.data?.[grupo.id]?.length || 0} Técnicos</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>Añadir técnicos</span>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
